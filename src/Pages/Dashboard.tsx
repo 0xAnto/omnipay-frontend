@@ -5,11 +5,13 @@ import { DownOutlined } from '@ant-design/icons';
 import { ADDRESS, BundlerEndpoints, ContractAddress } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
 import { Contract, ethers } from 'ethers';
-import { getUiAmount } from 'utils/helpers';
+import { getUiAmount, sleep } from 'utils/helpers';
 import { ERC20Helper } from 'utils/ERC20Helper';
 import TextArea from 'antd/es/input/TextArea';
 import Submit from './Submit';
 import { ERC721_ABI } from 'utils/NFT_ABI';
+import Lottie from 'react-lottie-player';
+import loader from '../image/loader.json';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -30,6 +32,8 @@ const Dashboard = () => {
     to: '',
     data: '',
   });
+  const [isLoader, setIsLoader] = useState(false);
+  const [isBalanceLoader, setIsBalanceLoader] = useState(false);
   useEffect(() => {
     const sdk = async () => {
       const [
@@ -145,31 +149,38 @@ const Dashboard = () => {
   ];
 
   const handleSourceRadioChange = async (e: any) => {
-    setSourceSelectedValue(e.target.value);
-    let provider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(
-      BundlerEndpoints[421613].bundler
-    );
-    switch (Number(e.target.value)) {
-      case 1:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
-        break;
-      case 2:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler);
-        break;
-      case 3:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler);
-        break;
-      case 4:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler);
-        break;
-      case 5:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler);
-        break;
-      default:
-        break;
+    try {
+      setIsBalanceLoader(true);
+      setSourceSelectedValue(e.target.value);
+      let provider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(
+        BundlerEndpoints[421613].bundler
+      );
+      switch (Number(e.target.value)) {
+        case 1:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
+          break;
+        case 2:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler);
+          break;
+        case 3:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler);
+          break;
+        case 4:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler);
+          break;
+        case 5:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler);
+          break;
+        default:
+          break;
+      }
+      const balance = await provider.getBalance(ADDRESS, 'latest');
+      setNativebalance(getUiAmount(Number(balance), 18));
+    } catch (error: any) {
+      console.log('Error executing order:', error);
+    } finally {
+      setIsBalanceLoader(false);
     }
-    const balance = await provider.getBalance(ADDRESS, 'latest');
-    setNativebalance(getUiAmount(Number(balance), 18));
   };
 
   const handleTargetRadioChange = (e: any) => {
@@ -182,12 +193,20 @@ const Dashboard = () => {
     console.log('🚀 token:', token);
   };
   const mintClick = async () => {
-    let data = await mintUserOps(sourceSelectedValue);
-    console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
+    try {
+      setIsLoader(true);
+      let data = await mintUserOps(sourceSelectedValue);
+      console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
+    } catch (error: any) {
+      console.log('Error executing order:', error);
+    } finally {
+      setIsLoader(false);
+    }
   };
   const mintUserOps = async (sourceSelectedValue: number) => {
     switch (sourceSelectedValue) {
       case 1:
+        if (!arbitrumGoerliInstance) return;
         console.log('arbitrumGoerli');
         let collection = new Contract(
           ContractAddress[421613].NFT,
@@ -195,12 +214,22 @@ const Dashboard = () => {
           new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
         );
         const transactionData = collection.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        const data = await arbitrumGoerliInstance?.addUserOpsToBatch({
+        await arbitrumGoerliInstance.clearUserOpsFromBatch();
+        await arbitrumGoerliInstance?.addUserOpsToBatch({
           to: ContractAddress[421613].NFT,
           data: transactionData,
         });
-        return await arbitrumGoerliInstance?.estimate();
+        let op = await arbitrumGoerliInstance.estimate();
+        let hash = await arbitrumGoerliInstance.send(op);
+        let userOpsReceipt = null;
+        const timeout = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceipt == null && Date.now() < timeout) {
+          await sleep(2);
+          userOpsReceipt = await arbitrumGoerliInstance.getUserOpReceipt(hash);
+        }
+        return userOpsReceipt;
       case 2:
+        if (!mantletestnetInstance) return;
         console.log('mantletestnet');
         let collection1 = new Contract(
           ContractAddress[5001].NFT,
@@ -208,12 +237,22 @@ const Dashboard = () => {
           new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
         );
         const transactionData1 = collection1.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        const data1 = await mantletestnetInstance?.addUserOpsToBatch({
+        await mantletestnetInstance.clearUserOpsFromBatch();
+        await mantletestnetInstance?.addUserOpsToBatch({
           to: ContractAddress[5001].NFT,
           data: transactionData1,
         });
-        return await mantletestnetInstance?.estimate();
+        let opmantletestnet = await mantletestnetInstance.estimate();
+        let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
+        let userOpsReceiptmantletestnet = null;
+        const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
+          await sleep(2);
+          userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+        }
+        return userOpsReceiptmantletestnet;
       case 3:
+        if (!scrollsepoliaInstance) return;
         console.log('scrollsepolia');
         let collection2 = new Contract(
           ContractAddress[534351].NFT,
@@ -221,12 +260,22 @@ const Dashboard = () => {
           new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
         );
         const transactionData2 = collection2.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        const data2 = await scrollsepoliaInstance?.addUserOpsToBatch({
+        await scrollsepoliaInstance.clearUserOpsFromBatch();
+        await scrollsepoliaInstance?.addUserOpsToBatch({
           to: ContractAddress[534351].NFT,
           data: transactionData2,
         });
-        return await scrollsepoliaInstance?.estimate();
+        let opscrollsepolia = await scrollsepoliaInstance.estimate();
+        let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
+        let userOpsReceiptscrollsepolia = null;
+        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
+          await sleep(2);
+          userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+        }
+        return userOpsReceiptscrollsepolia;
       case 4:
+        if (!basegoerliInstance) return;
         console.log('basegoerli');
         let collection3 = new Contract(
           ContractAddress[84531].NFT,
@@ -234,12 +283,22 @@ const Dashboard = () => {
           new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
         );
         const transactionData3 = collection3.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        const data3 = await basegoerliInstance?.addUserOpsToBatch({
+        await basegoerliInstance.clearUserOpsFromBatch();
+        await basegoerliInstance?.addUserOpsToBatch({
           to: ContractAddress[84531].NFT,
           data: transactionData3,
         });
-        return await basegoerliInstance?.estimate();
+        let opbasegoerli = await basegoerliInstance.estimate();
+        let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
+        let userOpsReceiptbasegoerli = null;
+        const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptbasegoerli == null && Date.now() < timeoutbasegoerli) {
+          await sleep(2);
+          userOpsReceiptbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+        }
+        return userOpsReceiptbasegoerli;
       case 5:
+        if (!mumbaiInstance) return;
         console.log('mumbai');
         let collection4 = new Contract(
           ContractAddress[80001].NFT,
@@ -247,11 +306,20 @@ const Dashboard = () => {
           new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
         );
         const transactionData4 = collection4.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        const data4 = await mumbaiInstance?.addUserOpsToBatch({
+        await mumbaiInstance.clearUserOpsFromBatch();
+        await mumbaiInstance?.addUserOpsToBatch({
           to: ContractAddress[80001].NFT,
           data: transactionData4,
         });
-        return await mumbaiInstance?.estimate();
+        let opmumbai = await mumbaiInstance.estimate();
+        let hashmumbai = await mumbaiInstance.send(opmumbai);
+        let userOpsReceiptmumbai = null;
+        const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptmumbai == null && Date.now() < timeoutmumbai) {
+          await sleep(2);
+          userOpsReceiptmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+        }
+        return userOpsReceiptmumbai;
       default:
         break;
     }
@@ -325,39 +393,89 @@ const Dashboard = () => {
     switch (sourceSelectedValue) {
       case 1:
         console.log('arbitrumGoerli');
-        await arbitrumGoerliInstance?.addUserOpsToBatch({
+        if (!arbitrumGoerliInstance) return;
+        await arbitrumGoerliInstance.clearUserOpsFromBatch();
+        await arbitrumGoerliInstance.addUserOpsToBatch({
           to: to,
           data: data,
         });
-        return await arbitrumGoerliInstance?.estimate();
+        let op = await arbitrumGoerliInstance.estimate();
+        let hash = await arbitrumGoerliInstance.send(op);
+        let userOpsReceipt = null;
+        const timeout = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceipt == null && Date.now() < timeout) {
+          await sleep(2);
+          userOpsReceipt = await arbitrumGoerliInstance.getUserOpReceipt(hash);
+        }
+        return userOpsReceipt;
       case 2:
         console.log('mantletestnet');
-        await mantletestnetInstance?.addUserOpsToBatch({
+        if (!mantletestnetInstance) return;
+        await mantletestnetInstance.clearUserOpsFromBatch();
+        await mantletestnetInstance.addUserOpsToBatch({
           to: to,
           data: data,
         });
-        return await mantletestnetInstance?.estimate();
+        let opmantletestnet = await mantletestnetInstance.estimate();
+        let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
+        let userOpsReceiptmantletestnet = null;
+        const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
+          await sleep(2);
+          userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+        }
+        return userOpsReceiptmantletestnet;
       case 3:
         console.log('scrollsepolia');
-        await scrollsepoliaInstance?.addUserOpsToBatch({
+        if (!scrollsepoliaInstance) return;
+        await scrollsepoliaInstance.clearUserOpsFromBatch();
+        await scrollsepoliaInstance.addUserOpsToBatch({
           to: to,
           data: data,
         });
-        return await scrollsepoliaInstance?.estimate();
+        let opscrollsepolia = await scrollsepoliaInstance.estimate();
+        let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
+        let userOpsReceiptscrollsepolia = null;
+        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
+          await sleep(2);
+          userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+        }
+        return userOpsReceiptscrollsepolia;
       case 4:
         console.log('basegoerli');
+        if (!basegoerliInstance) return;
+        await basegoerliInstance.clearUserOpsFromBatch();
         await basegoerliInstance?.addUserOpsToBatch({
           to: to,
           data: data,
         });
-        return await basegoerliInstance?.estimate();
+        let opbasegoerli = await basegoerliInstance.estimate();
+        let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
+        let userOpsbasegoerli = null;
+        const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
+        while (userOpsbasegoerli == null && Date.now() < timeoutbasegoerli) {
+          await sleep(2);
+          userOpsbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+        }
+        return userOpsbasegoerli;
       case 5:
         console.log('mumbai');
+        if (!mumbaiInstance) return;
+        await mumbaiInstance.clearUserOpsFromBatch();
         await mumbaiInstance?.addUserOpsToBatch({
           to: to,
           data: data,
         });
-        return await mumbaiInstance?.estimate();
+        let opmumbai = await mumbaiInstance.estimate();
+        let hashmumbai = await mumbaiInstance.send(opmumbai);
+        let userOpsmumbai = null;
+        const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
+        while (userOpsmumbai == null && Date.now() < timeoutmumbai) {
+          await sleep(2);
+          userOpsmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+        }
+        return userOpsmumbai;
       default:
         break;
     }
@@ -365,7 +483,8 @@ const Dashboard = () => {
   const handleExecute = async () => {
     const { to, data } = formData;
     let dataOps = await usdcUserOps(sourceSelectedValue, to, data);
-    console.log('🚀 ~ file: Dashboard.tsx:398 ~ handleExecute ~ dataOps:', dataOps);
+
+    console.log('🚀 USDC :', dataOps);
   };
   const handleInputChange = (name: string, value: string) => {
     setFormData((prevData) => ({
@@ -401,7 +520,20 @@ const Dashboard = () => {
             ))}
           </Radio.Group>
         </div>
-        <div className="">{`Balance : ${nativeBalance ? nativeBalance : '0.0'}`}</div>
+        {isBalanceLoader ? (
+          <div className=" flex justify-center items-center">
+            <span>{'Loading '}</span>
+            <Lottie
+              loop
+              animationData={loader}
+              play
+              className="w-[2.2rem] h-[1.2rem] flex justify-center items-center"
+            />
+          </div>
+        ) : (
+          <div className="">{`Balance : ${nativeBalance ? nativeBalance : '0.0'}`}</div>
+        )}
+        {/* <div className="">{`Balance : ${nativeBalance ? nativeBalance : '0.0'}`}</div> */}
         <Radio.Group value={mintTypeValue} size="large" onChange={handleMintChange}>
           {mintType.map((option) => (
             <Radio.Button key={option.value} value={option.value}>
@@ -423,7 +555,19 @@ const Dashboard = () => {
                 }}
                 size="large"
               >
-                Mint
+                {isLoader ? (
+                  <div className=" flex justify-center items-center">
+                    <span>{'Estimating '}</span>
+                    <Lottie
+                      loop
+                      animationData={loader}
+                      play
+                      className="w-[2.2rem] h-[1.2rem] flex justify-center items-center"
+                    />
+                  </div>
+                ) : (
+                  <span>{'Mint'}</span>
+                )}
               </Button>
             </div>
           </div>
