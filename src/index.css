@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+body {
+  background-color: black;
+}
+
+.input-field {
+	margin: 0.5rem;
+	padding: 0.7rem;
+	text-align: center;
+	color: #0070f3;
+	background-color: #fafafa;
+	text-decoration: none;
+	border: 1px solid #0070f3;
+	border-radius: 10px;
+	transition: color 0.15s ease, border-color 0.15s ease;
+	width: 100%;
+	box-sizing: border-box; /* Ensure padding and border are included in width */
+}
+
+.input-field:hover,
+.input-field:focus {
+	cursor: text; /* Change cursor to text when hovering or focusing */
+	background-color: #f1f1f1;
+}
