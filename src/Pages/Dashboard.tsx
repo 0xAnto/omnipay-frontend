@@ -1,5 +1,5 @@
 import React, { SetStateAction, useEffect, useState } from 'react';
-import nft from '../image/BoredApe.png';
+import nft from '../image/nft.jpeg';
 import { Button, Dropdown, Flex, Input, Menu, MenuProps, Radio, RadioChangeEvent, Space, message } from 'antd';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
 import { ADDRESS, BundlerEndpoints, ContractAddress, USDC } from 'utils/Constants';
@@ -7,6 +7,7 @@ import { PrimeSdk } from '@etherspot/prime-sdk';
 import { ethers } from 'ethers';
 import { getUiAmount } from 'utils/helpers';
 import { ERC20Helper } from 'utils/ERC20Helper';
+import TextArea from 'antd/es/input/TextArea';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -17,10 +18,21 @@ const Dashboard = () => {
   const [nativeBalance, setNativebalance] = useState<number>();
   const [sourceSelectedValue, setSourceSelectedValue] = useState(0);
   const [targetSelectedValue, setTargetSelectedValue] = useState(0);
+  const [mintTypeValue, setMintTypeValue] = useState(1);
+  const [arbitrumGoerliUsdcValue, setArbitrumGoerliUSDC] = useState<number>(0);
+  const [mantletestnetUsdcValue, setMantletestnetUSDC] = useState<number>(0);
+  const [scrollsepoliaUsdcValue, setScrollsepoliaUSDC] = useState<number>(0);
+  const [basegoerliUsdcValue, setBasegoerliUSDC] = useState<number>(0);
+  const [mumbaiUsdcValue, setMumbaiUSDC] = useState<number>(0);
   useEffect(() => {
     const sdk = async () => {
-      const [arbitrumgoerliPrimeInstance, mantletestnetPrimeInstance, scrollsepoliaPrimeInstance, baseGoerliPrimeInstance, mumbaiPrimeInstance] = await Promise.all([
-
+      const [
+        arbitrumgoerliPrimeInstance,
+        mantletestnetPrimeInstance,
+        scrollsepoliaPrimeInstance,
+        baseGoerliPrimeInstance,
+        mumbaiPrimeInstance,
+      ] = await Promise.all([
         new PrimeSdk(
           {
             privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
@@ -70,24 +82,54 @@ const Dashboard = () => {
       // const data =new ERC20Helper(arbitrumgoerliPrimeInstance as PrimeSdk)
       setArbitrumGoerliInstance(arbitrumgoerliPrimeInstance);
       setMantletestnetInstance(mantletestnetPrimeInstance);
-      setScrollsepoliaInstance(scrollsepoliaPrimeInstance)
-      setBasegoerliInstance(baseGoerliPrimeInstance)
-      setMumbaiInstance(mumbaiPrimeInstance)
-
+      setScrollsepoliaInstance(scrollsepoliaPrimeInstance);
+      setBasegoerliInstance(baseGoerliPrimeInstance);
+      setMumbaiInstance(mumbaiPrimeInstance);
+      const [
+        arbitrumgoerliusdc,
+        mantletestnetusdc,
+        scrollsepoliausdc,
+        baseGoerliusdc,
+        mumbaiusdc,
+      ] = await Promise.all([
+        new ERC20Helper(
+          arbitrumGoerliInstance as PrimeSdk,
+          ContractAddress[421613].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
+        ),
+        new ERC20Helper(
+          mantletestnetInstance as PrimeSdk,
+          ContractAddress[5001].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
+        ),
+        new ERC20Helper(
+          scrollsepoliaInstance as PrimeSdk,
+          ContractAddress[534351].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
+        ),
+        new ERC20Helper(
+          basegoerliInstance as PrimeSdk,
+          ContractAddress[84531].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
+        ),
+        new ERC20Helper(
+          mumbaiInstance as PrimeSdk,
+          ContractAddress[80001].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
+        ),
+      ]);
+      setArbitrumGoerliUSDC(getUiAmount(Number(await arbitrumgoerliusdc.balanceOf(ADDRESS)), 6));
+      setMantletestnetUSDC(getUiAmount(Number(await mantletestnetusdc.balanceOf(ADDRESS)), 6));
+      setScrollsepoliaUSDC(getUiAmount(Number(await scrollsepoliausdc.balanceOf(ADDRESS)), 6));
+      setBasegoerliUSDC(getUiAmount(Number(await baseGoerliusdc.balanceOf(ADDRESS)), 6));
+      setMumbaiUSDC(getUiAmount(Number(await mumbaiusdc.balanceOf(ADDRESS)), 6));
     };
     sdk();
   }, []);
-  useEffect(()=>{
-    const sdk = async () => {
-    let address = await mumbaiInstance?.getCounterFactualAddress()
-    console.log("basegoerliInstance",  await basegoerliInstance?.getCounterFactualAddress())
-    console.log("arbitrumGoerliInstance",  await arbitrumGoerliInstance?.getCounterFactualAddress())
-    console.log("mantletestnetInstance",  await mantletestnetInstance?.getCounterFactualAddress())
-    console.log("scrollsepoliaInstance",  await scrollsepoliaInstance?.getCounterFactualAddress())
-    console.log("basegoerliInstance",  await basegoerliInstance?.getCounterFactualAddress())
-    }
-    sdk();
-  },[mumbaiInstance])
+  const mintType = [
+    { label: 'Call Data', value: 1 },
+    { label: 'NFT', value: 2 },
+  ];
   const sourceChainOptions = [
     { label: 'Arbitrum Goerli', value: 1 },
     { label: 'Mantle Testnet', value: 2 },
@@ -105,7 +147,9 @@ const Dashboard = () => {
 
   const handleSourceRadioChange = async (e: any) => {
     setSourceSelectedValue(e.target.value);
-    let provider:ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
+    let provider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(
+      BundlerEndpoints[421613].bundler
+    );
     switch (Number(e.target.value)) {
       case 1:
         provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
@@ -125,17 +169,17 @@ const Dashboard = () => {
       default:
         break;
     }
-    const balance = await provider.getBalance(
-      ADDRESS,
-      "latest"
-    );
-    setNativebalance(getUiAmount(Number(balance)))
+    const balance = await provider.getBalance(ADDRESS, 'latest');
+    setNativebalance(getUiAmount(Number(balance), 18));
   };
 
   const handleTargetRadioChange = (e: any) => {
     setTargetSelectedValue(e.target.value);
   };
-  const items = [{ key: '1', label: 'USDC', logo: USDC.logoURI }];
+  const handleMintChange = (e: any) => {
+    setMintTypeValue(e.target.value);
+  };
+  // const items = [{ key: '1', label: 'USDC', logo: USDC.logoURI }];
   const handleClick = async (token: any) => {
     console.log('🚀 token:', token);
   };
@@ -194,20 +238,17 @@ const Dashboard = () => {
       </Button>
     </Dropdown>
   );
-  const usdcBalance = (chain:number) => {
-    switch (Number(chain)) {
-      case 1:
-        let data =new ERC20Helper(arbitrumGoerliInstance as PrimeSdk,ContractAddress[421613].USDC,new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler))
-        console.log("🚀 ~ file: Dashboard.tsx:201 ~ usdcBalance ~ data:", data)
-        break;
-      default:
-        break;
-    }
-  };
   return (
     <div className="bg-black  xxl:h-screen xl:h-screen  lg:-screen md:h-full sm:h-full max-sm:h-full  font-inter flex w-full flex-row justify-center items-center">
+      {}
       <div className="xxl:w-[40%] xl:w-[60%] lg:w-[80%] md:w-[80%] sm:w-[100%] max-sm:w-[100%]   h-full bg-white flex flex-col justify-center items-center gap-[2rem]">
         <div className="">
+          <div className="flex flex-row justify-center items-center mb-10">
+            <Button className="flex flex-row justify-center items-center" size="large">
+              Metamask
+            </Button>
+          </div>
+
           <Radio.Group value={sourceSelectedValue} size="large" onChange={handleSourceRadioChange}>
             {sourceChainOptions.map((option) => (
               <Radio.Button key={option.value} value={option.value}>
@@ -216,16 +257,37 @@ const Dashboard = () => {
             ))}
           </Radio.Group>
         </div>
-        <div className="">{`Balance : ${nativeBalance?nativeBalance:'0.0'}`}</div>
-        <img className="w-40 h-40 " src={nft} alt="matic" />
-
-        <div className="flex flex-col justify-center items-center">
-          <p className="text-lg font-semibold">NFT Name: #3042</p>
-          <p className="text-lg font-semibold">NFT Collection: Bored Ape Yacht Club</p>
-        </div>
-        <Button className="" size="large">
-          Mint
-        </Button>
+        <div className="">{`Balance : ${nativeBalance ? nativeBalance : '0.0'}`}</div>
+        <Radio.Group value={mintTypeValue} size="large" onChange={handleMintChange}>
+          {mintType.map((option) => (
+            <Radio.Button key={option.value} value={option.value}>
+              {option.label}
+            </Radio.Button>
+          ))}
+        </Radio.Group>
+        {mintTypeValue && mintTypeValue == 2 ? (
+          <div className="flex flex-col justify-center items-center">
+            <img className="w-40 h-40 " src={nft} alt="matic" />
+            <div className="flex flex-col justify-center items-center">
+              <p className="text-lg font-semibold">NFT Name: #3042</p>
+              <p className="text-lg font-semibold">NFT Collection: Lucky Louie</p>
+            </div>
+            <div>
+              <Button className="" size="large">
+                Mint
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className={`flex flex-col justify-center items-center `}>
+            <TextArea rows={4} placeholder="Enter call data" />
+            <div>
+              <Button className="mt-5" size="large">
+                Execute
+              </Button>
+            </div>
+          </div>
+        )}
         <div className="flex flex-row justify-center items-center gap-[1rem]">
           <Radio.Group value={targetSelectedValue} size="large" onChange={handleTargetRadioChange}>
             {targetChainOptions
@@ -250,17 +312,17 @@ const Dashboard = () => {
                     </Space>
                   </Button>
                 </Dropdown>
-                <span className="">{0}</span>
+                <span>{arbitrumGoerliUsdcValue?arbitrumGoerliUsdcValue:0}</span>
               </Space>
             ))}
         </div>
         <div className="flex flex-row justify-center items-center gap-[1rem]">
-        <Button className="" size="large">
-          Submit 
-        </Button>
-        <Button className="" size="large">
-          Cancel
-        </Button>
+          <Button className="" size="large">
+            Submit
+          </Button>
+          <Button className="" size="large">
+            Cancel
+          </Button>
         </div>
       </div>
     </div>
