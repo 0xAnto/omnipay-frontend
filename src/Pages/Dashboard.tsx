@@ -1,13 +1,14 @@
-import React, { SetStateAction, useEffect, useState } from 'react';
+import React, {useEffect, useState } from 'react';
 import nft from '../image/nft.jpeg';
-import { Button, Dropdown, Flex, Input, Menu, MenuProps, Radio, RadioChangeEvent, Space, message } from 'antd';
-import { DownOutlined, UserOutlined } from '@ant-design/icons';
-import { ADDRESS, BundlerEndpoints, ContractAddress, USDC } from 'utils/Constants';
+import { Button, Dropdown, Form, Input, Menu, MenuProps, Radio, Space, message } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
+import { ADDRESS, BundlerEndpoints, ContractAddress } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
 import { ethers } from 'ethers';
 import { getUiAmount } from 'utils/helpers';
 import { ERC20Helper } from 'utils/ERC20Helper';
 import TextArea from 'antd/es/input/TextArea';
+import Submit from './Submit';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -85,13 +86,7 @@ const Dashboard = () => {
       setScrollsepoliaInstance(scrollsepoliaPrimeInstance);
       setBasegoerliInstance(baseGoerliPrimeInstance);
       setMumbaiInstance(mumbaiPrimeInstance);
-      const [
-        arbitrumgoerliusdc,
-        mantletestnetusdc,
-        scrollsepoliausdc,
-        baseGoerliusdc,
-        mumbaiusdc,
-      ] = await Promise.all([
+      const [arbitrumgoerliusdc, mantletestnetusdc, scrollsepoliausdc, baseGoerliusdc, mumbaiusdc] = await Promise.all([
         new ERC20Helper(
           arbitrumGoerliInstance as PrimeSdk,
           ContractAddress[421613].USDC,
@@ -179,13 +174,11 @@ const Dashboard = () => {
   const handleMintChange = (e: any) => {
     setMintTypeValue(e.target.value);
   };
-  // const items = [{ key: '1', label: 'USDC', logo: USDC.logoURI }];
   const handleClick = async (token: any) => {
     console.log('🚀 token:', token);
   };
   const handleMenuClick: MenuProps['onClick'] = (e: any) => {
-    message.info('Click on menu item.');
-    console.log('click', e);
+    message.info('Selected USDC.');
   };
   const itemsdrop: MenuProps['items'] = [
     {
@@ -238,17 +231,35 @@ const Dashboard = () => {
       </Button>
     </Dropdown>
   );
+  type FieldType = {
+    PrivateKey?: string;
+    to?: string;
+    Data?: string;
+  };
+  const onFinish = (values: any) => {
+    const privateKeyValue = values.PrivateKey;
+    console.log('PrivateKey:', privateKeyValue);
+  };
   return (
     <div className="bg-black  xxl:h-screen xl:h-screen  lg:-screen md:h-full sm:h-full max-sm:h-full  font-inter flex w-full flex-row justify-center items-center">
-      {}
       <div className="xxl:w-[40%] xl:w-[60%] lg:w-[80%] md:w-[80%] sm:w-[100%] max-sm:w-[100%]   h-full bg-white flex flex-col justify-center items-center gap-[2rem]">
+        <div>
+          <p className="justify-center items-center font-extrabold">Omni Pay</p>
+        </div>
+        <Form name="basic" initialValues={{ remember: true }} onFinish={onFinish} autoComplete="off">
+          <Form.Item label="PrivateKey" name="PrivateKey">
+            <Input.Password />
+          </Form.Item>
+          <Button
+            className="bg-blue-500 text-white flex  justify-center items-center "
+            type="primary"
+            htmlType="submit"
+          >
+            Submit
+          </Button>
+        </Form>
         <div className="">
-          <div className="flex flex-row justify-center items-center mb-10">
-            <Button className="flex flex-row justify-center items-center" size="large">
-              Metamask
-            </Button>
-          </div>
-
+          <div className="flex flex-row justify-center items-center mb-1"></div>
           <Radio.Group value={sourceSelectedValue} size="large" onChange={handleSourceRadioChange}>
             {sourceChainOptions.map((option) => (
               <Radio.Button key={option.value} value={option.value}>
@@ -280,7 +291,12 @@ const Dashboard = () => {
           </div>
         ) : (
           <div className={`flex flex-col justify-center items-center `}>
-            <TextArea rows={4} placeholder="Enter call data" />
+            <Form.Item<FieldType> label="To" name="to" rules={[{ message: 'Enter target address' }]}>
+              <Input placeholder="Enter target address" />
+            </Form.Item>
+            <Form.Item<FieldType> label="Data" name="Data" rules={[{ message: 'Enter calldata' }]}>
+              <TextArea rows={4} placeholder="Enter call data" />
+            </Form.Item>
             <div>
               <Button className="mt-5" size="large">
                 Execute
@@ -300,21 +316,71 @@ const Dashboard = () => {
           </Radio.Group>
         </div>
         <div className="flex flex-row justify-center items-center gap-[1rem]">
-          {targetChainOptions
-            .filter((option) => option.value !== sourceSelectedValue)
-            .map((option) => (
-              <Space>
-                <Dropdown key={option.value} overlay={menu} placement="bottomLeft" arrow>
-                  <Button className="bg-blue-500 text-white">
-                    <Space>
-                      USDC
-                      <DownOutlined />
-                    </Space>
-                  </Button>
-                </Dropdown>
-                <span>{arbitrumGoerliUsdcValue?arbitrumGoerliUsdcValue:0}</span>
-              </Space>
-            ))}
+          {sourceSelectedValue !== 1 && (
+            <Space>
+              <Dropdown overlay={menu} placement="bottomLeft" arrow>
+                <Button>
+                  <Space>
+                    USDC
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+              <span>{arbitrumGoerliUsdcValue ? arbitrumGoerliUsdcValue : 0}</span>
+            </Space>
+          )}
+          {sourceSelectedValue !== 2 && (
+            <Space>
+              <Dropdown overlay={menu} placement="bottomLeft" arrow>
+                <Button>
+                  <Space>
+                    USDC
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+              <span>{mantletestnetUsdcValue ? mantletestnetUsdcValue : 0}</span>
+            </Space>
+          )}
+          {sourceSelectedValue !== 3 && (
+            <Space>
+              <Dropdown overlay={menu} placement="bottomLeft" arrow>
+                <Button>
+                  <Space>
+                    USDC
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+              <span>{scrollsepoliaUsdcValue ? scrollsepoliaUsdcValue : 0}</span>
+            </Space>
+          )}
+          {sourceSelectedValue !== 4 && (
+            <Space>
+              <Dropdown overlay={menu} placement="bottomLeft" arrow>
+                <Button>
+                  <Space>
+                    USDC
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+              <span>{basegoerliUsdcValue ? basegoerliUsdcValue : 0}</span>
+            </Space>
+          )}
+          {sourceSelectedValue !== 5 && (
+            <Space>
+              <Dropdown overlay={menu} placement="bottomLeft" arrow>
+                <Button>
+                  <Space>
+                    USDC
+                    <DownOutlined />
+                  </Space>
+                </Button>
+              </Dropdown>
+              <span>{mumbaiUsdcValue ? mumbaiUsdcValue : 0}</span>
+            </Space>
+          )}
         </div>
         <div className="flex flex-row justify-center items-center gap-[1rem]">
           <Button className="" size="large">
@@ -325,6 +391,7 @@ const Dashboard = () => {
           </Button>
         </div>
       </div>
+      {false && <Submit />}
     </div>
   );
 };
