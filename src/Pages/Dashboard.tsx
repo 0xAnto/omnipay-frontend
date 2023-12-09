@@ -8,6 +8,7 @@ import { ethers } from 'ethers';
 import { getUiAmount } from 'utils/helpers';
 import { ERC20Helper } from 'utils/ERC20Helper';
 import TextArea from 'antd/es/input/TextArea';
+import Submit from './Submit';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -173,13 +174,11 @@ const Dashboard = () => {
   const handleMintChange = (e: any) => {
     setMintTypeValue(e.target.value);
   };
-  // const items = [{ key: '1', label: 'USDC', logo: USDC.logoURI }];
   const handleClick = async (token: any) => {
     console.log('🚀 token:', token);
   };
   const handleMenuClick: MenuProps['onClick'] = (e: any) => {
-    message.info('Click on menu item.');
-    console.log('click', e);
+    message.info('Selected USDC.');
   };
   const itemsdrop: MenuProps['items'] = [
     {
@@ -235,7 +234,7 @@ const Dashboard = () => {
   type FieldType = {
     PrivateKey?: string;
     to?: string;
-    CallData?: string;
+    Data?: string;
   };
   const onFinish = (values: any) => {
     const privateKeyValue = values.PrivateKey;
@@ -245,7 +244,7 @@ const Dashboard = () => {
     <div className="bg-black  xxl:h-screen xl:h-screen  lg:-screen md:h-full sm:h-full max-sm:h-full  font-inter flex w-full flex-row justify-center items-center">
       <div className="xxl:w-[40%] xl:w-[60%] lg:w-[80%] md:w-[80%] sm:w-[100%] max-sm:w-[100%]   h-full bg-white flex flex-col justify-center items-center gap-[2rem]">
         <div>
-          <p className="justify-center items-center font-bold">Omni Pay</p>
+          <p className="justify-center items-center font-extrabold">Omni Pay</p>
         </div>
         <Form name="basic" initialValues={{ remember: true }} onFinish={onFinish} autoComplete="off">
           <Form.Item label="PrivateKey" name="PrivateKey">
@@ -295,7 +294,7 @@ const Dashboard = () => {
             <Form.Item<FieldType> label="To" name="to" rules={[{ message: 'Enter target address' }]}>
               <Input placeholder="Enter target address" />
             </Form.Item>
-            <Form.Item<FieldType> label="CallData" name="CallData" rules={[{ message: 'Enter calldata' }]}>
+            <Form.Item<FieldType> label="Data" name="Data" rules={[{ message: 'Enter calldata' }]}>
               <TextArea rows={4} placeholder="Enter call data" />
             </Form.Item>
             <div>
@@ -392,6 +391,7 @@ const Dashboard = () => {
           </Button>
         </div>
       </div>
+      {false && <Submit />}
     </div>
   );
 };
