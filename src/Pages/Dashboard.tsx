@@ -2,40 +2,128 @@ import React, { SetStateAction, useEffect, useState } from 'react';
 import nft from '../image/BoredApe.png';
 import { Button, Dropdown, Flex, Input, Menu, MenuProps, Radio, RadioChangeEvent, Space, message } from 'antd';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
-import { USDC } from 'utils/Constants';
+import { ADDRESS, BundlerEndpoints, USDC } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
+import { ethers } from 'ethers';
+import { getUiAmount } from 'utils/helpers';
+import { ERC20Helper } from 'utils/ERC20Helper';
+
 const Dashboard = () => {
+  const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
+  const [mantletestnetInstance, setMantletestnetInstance] = useState<PrimeSdk>();
+  const [scrollsepoliaInstance, setScrollsepoliaInstance] = useState<PrimeSdk>();
+  const [basegoerliInstance, setBasegoerliInstance] = useState<PrimeSdk>();
+  const [mumbaiInstance, setMumbaiInstance] = useState<PrimeSdk>();
+  const [nativeBalance, setNativebalance] = useState<number>();
+  const [sourceSelectedValue, setSourceSelectedValue] = useState(0);
+  const [targetSelectedValue, setTargetSelectedValue] = useState(0);
   useEffect(() => {
     const sdk = async () => {
-      const primeSdk = new PrimeSdk({
-        privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string }, {
-        chainId: Number(process.env.REACT_APP_CHAIN_ID),
-        projectKey: '', 
-    });
-    const balances = await primeSdk.getNativeBalance();
-    console.log("🚀 ~ file: Dashboard.tsx:20 ~ sdk ~ balances:", balances)
+      const [arbitrumgoerliPrimeInstance, mantletestnetPrimeInstance, scrollsepoliaPrimeInstance, baseGoerliPrimeInstance, mumbaiPrimeInstance] = await Promise.all([
+
+        new PrimeSdk(
+          {
+            privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
+          },
+          {
+            chainId: Number(BundlerEndpoints[421613].chainId),
+            bundlerRpcUrl: BundlerEndpoints[421613].bundler as string,
+            projectKey: '',
+          }
+        ),
+        new PrimeSdk(
+          {
+            privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
+          },
+          {
+            chainId: Number(BundlerEndpoints[5001].chainId),
+            bundlerRpcUrl: BundlerEndpoints[5001].bundler as string,
+            projectKey: '',
+          }
+        ),
+        new PrimeSdk(
+          {
+            privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
+          },
+          {
+            chainId: Number(BundlerEndpoints[534351].chainId),
+            bundlerRpcUrl: BundlerEndpoints[534351].bundler as string,
+            projectKey: '',
+          }
+        ),
+        new PrimeSdk(
+          {
+            privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
+          },
+          {
+            chainId: Number(BundlerEndpoints[84531].chainId),
+            bundlerRpcUrl: BundlerEndpoints[84531].bundler as string,
+            projectKey: '',
+          }
+        ),
+        new PrimeSdk(
+          {
+            privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
+          },
+          {
+            chainId: Number(BundlerEndpoints[80001].chainId),
+            bundlerRpcUrl: BundlerEndpoints[80001].bundler as string,
+            projectKey: '',
+          }
+        ),
+      ]);
+      // const data =new ERC20Helper(arbitrumgoerliPrimeInstance as PrimeSdk)
+      setArbitrumGoerliInstance(arbitrumgoerliPrimeInstance);
+      setMantletestnetInstance(mantletestnetPrimeInstance);
+      setScrollsepoliaInstance(scrollsepoliaPrimeInstance)
+      setBasegoerliInstance(baseGoerliPrimeInstance)
+      setMumbaiInstance(mumbaiPrimeInstance)
     };
     sdk();
   }, []);
 
   const sourceChainOptions = [
-    { label: 'Scroll Testnet', value: 1 },
-    { label: 'Arbitrum Goerli', value: 2 },
-    { label: 'Polygon Mumbai', value: 3 },
-    { label: 'Mantle Testnet', value: 4 },
-    { label: 'Base Goerli', value: 5 },
+    { label: 'Arbitrum Goerli', value: 1 },
+    { label: 'Mantle Testnet', value: 2 },
+    { label: 'Scroll Testnet', value: 3 },
+    { label: 'Base Goerli', value: 4 },
+    { label: 'Polygon Mumbai', value: 5 },
   ];
   const targetChainOptions = [
-    { label: 'Scroll Testnet', value: 1 },
-    { label: 'Arbitrum Goerli', value: 2 },
-    { label: 'Polygon Mumbai', value: 3 },
-    { label: 'Mantle Testnet', value: 4 },
-    { label: 'Base Goerli', value: 5 },
+    { label: 'Arbitrum Goerli', value: 1 },
+    { label: 'Mantle Testnet', value: 2 },
+    { label: 'Scroll Testnet', value: 3 },
+    { label: 'Base Goerli', value: 4 },
+    { label: 'Polygon Mumbai', value: 5 },
   ];
-  const [sourceSelectedValue, setSourceSelectedValue] = useState(0);
-  const [targetSelectedValue, setTargetSelectedValue] = useState(0);
-  const handleSourceRadioChange = (e: any) => {
+
+  const handleSourceRadioChange = async (e: any) => {
     setSourceSelectedValue(e.target.value);
+    let provider:ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
+    switch (Number(e.target.value)) {
+      case 1:
+        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
+        break;
+      case 2:
+        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler);
+        break;
+      case 3:
+        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler);
+        break;
+      case 4:
+        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler);
+        break;
+      case 5:
+        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler);
+        break;
+      default:
+        break;
+    }
+    const balance = await provider.getBalance(
+      ADDRESS,
+      "latest"
+    );
+    setNativebalance(getUiAmount(Number(balance)))
   };
 
   const handleTargetRadioChange = (e: any) => {
@@ -74,7 +162,7 @@ const Dashboard = () => {
     icon: string;
     onClick: () => void;
   }
-  
+
   const DropdownItem: React.FC<DropdownItemProps> = ({ label, icon, onClick }) => (
     <Menu.Item key={label} icon={<img src={icon} alt={label} className="menu-icon w-5 h-5 rounded-full mt-1 mr-1" />}>
       {label}
@@ -84,7 +172,7 @@ const Dashboard = () => {
     <Dropdown
       overlay={
         <Menu onClick={handleMenuClick}>
-          {itemsdrop.map((item:any) => (
+          {itemsdrop.map((item: any) => (
             <DropdownItem key={item.key} label={item.label} icon={item.icon} onClick={() => handleClick(item)} />
           ))}
         </Menu>
@@ -112,7 +200,7 @@ const Dashboard = () => {
             ))}
           </Radio.Group>
         </div>
-        <div className="absolute top-14 mt-4">{`Balance :${0}`}</div>
+        <div className="absolute top-14 mt-4">{`Balance : ${nativeBalance?nativeBalance:'0.0'}`}</div>
         <img className="w-40 h-40 absolute top-20 left-1/2 transform -translate-x-1/2 mt-8" src={nft} alt="matic" />
 
         <div className="absolute top-60 items-center mt-10">
@@ -130,12 +218,12 @@ const Dashboard = () => {
               ))}
           </Radio.Group>
         </div>
-        <div className='mt-20'>
-        {targetChainOptions
-              .filter((option) => option.value !== sourceSelectedValue)
-              .map((option) => (
-                <Space>
-                <Dropdown  key={option.value} overlay={menu} placement="bottomLeft" arrow >
+        <div className="mt-20">
+          {targetChainOptions
+            .filter((option) => option.value !== sourceSelectedValue)
+            .map((option) => (
+              <Space>
+                <Dropdown key={option.value} overlay={menu} placement="bottomLeft" arrow>
                   <Button className="bg-blue-500 text-white">
                     <Space>
                       USDC
@@ -143,24 +231,21 @@ const Dashboard = () => {
                     </Space>
                   </Button>
                 </Dropdown>
-                <span className='mr-6'>{0}</span>
+                <span className="mr-6">{0}</span>
               </Space>
-              ))}
-          {/* <Space>
-            <Dropdown overlay={menu} placement="bottomLeft" arrow>
-              <Button>
-                <Space>
-                  USDC
-                  <DownOutlined />
-                </Space>
-              </Button>
-            </Dropdown>
-            <span>Balance: {0}</span>
-          </Space> */}
+            ))}
         </div>
         <Button className="absolute top-80 mt-8" size="large">
           Mint
         </Button>
+        <div className="absolute top-80 mt-80">
+        <Button className="pr-[2px]" size="large">
+          Submit 
+        </Button>
+        <Button className="mr-10" size="large">
+          Cancel
+        </Button>
+        </div>
       </div>
     </div>
   );
