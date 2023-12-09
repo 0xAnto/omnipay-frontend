@@ -1,6 +1,7 @@
 export const USDC = {
   logoURI: 'https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png',
 };
+export const ADDRESS = '0x7305B1a9bDD8247DeB288BC2d271626159cB8c4c';
 
 // Bundler endpoints
 export const BundlerEndpoints = {
@@ -43,7 +44,7 @@ export const BundlerEndpoints = {
   },
   84531: {
     chainId: 84531,
-    bundler: 'https://basegoerli-bundler.etherspot.io',
+    bundler: 'https://basegoerli-bundler.etherspot.io/84531',
     contracts: {
       entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
       walletFactory: {
