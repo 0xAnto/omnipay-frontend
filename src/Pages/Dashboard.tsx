@@ -1,9 +1,23 @@
-import React, { SetStateAction, useState } from 'react';
+import React, { SetStateAction, useEffect, useState } from 'react';
 import nft from '../image/BoredApe.png';
 import { Button, Dropdown, Flex, Input, Menu, MenuProps, Radio, RadioChangeEvent, Space, message } from 'antd';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
 import { USDC } from 'utils/Constants';
+import { PrimeSdk } from '@etherspot/prime-sdk';
 const Dashboard = () => {
+  useEffect(() => {
+    const sdk = async () => {
+      const primeSdk = new PrimeSdk({
+        privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string }, {
+        chainId: Number(process.env.REACT_APP_CHAIN_ID),
+        projectKey: '', 
+    });
+    const balances = await primeSdk.getNativeBalance();
+    console.log("🚀 ~ file: Dashboard.tsx:20 ~ sdk ~ balances:", balances)
+    };
+    sdk();
+  }, []);
+
   const sourceChainOptions = [
     { label: 'Scroll Testnet', value: 1 },
     { label: 'Arbitrum Goerli', value: 2 },
