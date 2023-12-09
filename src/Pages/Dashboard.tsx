@@ -2,7 +2,7 @@ import React, { SetStateAction, useEffect, useState } from 'react';
 import nft from '../image/BoredApe.png';
 import { Button, Dropdown, Flex, Input, Menu, MenuProps, Radio, RadioChangeEvent, Space, message } from 'antd';
 import { DownOutlined, UserOutlined } from '@ant-design/icons';
-import { ADDRESS, BundlerEndpoints, USDC } from 'utils/Constants';
+import { ADDRESS, BundlerEndpoints, ContractAddress, USDC } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
 import { ethers } from 'ethers';
 import { getUiAmount } from 'utils/helpers';
@@ -27,7 +27,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[421613].chainId),
-            bundlerRpcUrl: BundlerEndpoints[421613].bundler as string,
             projectKey: '',
           }
         ),
@@ -37,7 +36,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[5001].chainId),
-            bundlerRpcUrl: BundlerEndpoints[5001].bundler as string,
             projectKey: '',
           }
         ),
@@ -47,7 +45,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[534351].chainId),
-            bundlerRpcUrl: BundlerEndpoints[534351].bundler as string,
             projectKey: '',
           }
         ),
@@ -57,7 +54,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[84531].chainId),
-            bundlerRpcUrl: BundlerEndpoints[84531].bundler as string,
             projectKey: '',
           }
         ),
@@ -67,7 +63,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[80001].chainId),
-            bundlerRpcUrl: BundlerEndpoints[80001].bundler as string,
             projectKey: '',
           }
         ),
@@ -78,10 +73,21 @@ const Dashboard = () => {
       setScrollsepoliaInstance(scrollsepoliaPrimeInstance)
       setBasegoerliInstance(baseGoerliPrimeInstance)
       setMumbaiInstance(mumbaiPrimeInstance)
+
     };
     sdk();
   }, []);
-
+  useEffect(()=>{
+    const sdk = async () => {
+    let address = await mumbaiInstance?.getCounterFactualAddress()
+    console.log("basegoerliInstance",  await basegoerliInstance?.getCounterFactualAddress())
+    console.log("arbitrumGoerliInstance",  await arbitrumGoerliInstance?.getCounterFactualAddress())
+    console.log("mantletestnetInstance",  await mantletestnetInstance?.getCounterFactualAddress())
+    console.log("scrollsepoliaInstance",  await scrollsepoliaInstance?.getCounterFactualAddress())
+    console.log("basegoerliInstance",  await basegoerliInstance?.getCounterFactualAddress())
+    }
+    sdk();
+  },[mumbaiInstance])
   const sourceChainOptions = [
     { label: 'Arbitrum Goerli', value: 1 },
     { label: 'Mantle Testnet', value: 2 },
@@ -188,10 +194,20 @@ const Dashboard = () => {
       </Button>
     </Dropdown>
   );
+  const usdcBalance = (chain:number) => {
+    switch (Number(chain)) {
+      case 1:
+        let data =new ERC20Helper(arbitrumGoerliInstance as PrimeSdk,ContractAddress[421613].USDC,new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler))
+        console.log("🚀 ~ file: Dashboard.tsx:201 ~ usdcBalance ~ data:", data)
+        break;
+      default:
+        break;
+    }
+  };
   return (
-    <div className="bg-black h-screen font-inter flex w-full flex-row justify-center items-center">
-      <div className="w-[40%] h-full bg-white flex flex-row justify-center items-center">
-        <div className="absolute top-5 mb-10">
+    <div className="bg-black  xxl:h-screen xl:h-screen  lg:-screen md:h-full sm:h-full max-sm:h-full  font-inter flex w-full flex-row justify-center items-center">
+      <div className="xxl:w-[40%] xl:w-[60%] lg:w-[80%] md:w-[80%] sm:w-[100%] max-sm:w-[100%]   h-full bg-white flex flex-col justify-center items-center gap-[2rem]">
+        <div className="">
           <Radio.Group value={sourceSelectedValue} size="large" onChange={handleSourceRadioChange}>
             {sourceChainOptions.map((option) => (
               <Radio.Button key={option.value} value={option.value}>
@@ -200,14 +216,17 @@ const Dashboard = () => {
             ))}
           </Radio.Group>
         </div>
-        <div className="absolute top-14 mt-4">{`Balance : ${nativeBalance?nativeBalance:'0.0'}`}</div>
-        <img className="w-40 h-40 absolute top-20 left-1/2 transform -translate-x-1/2 mt-8" src={nft} alt="matic" />
+        <div className="">{`Balance : ${nativeBalance?nativeBalance:'0.0'}`}</div>
+        <img className="w-40 h-40 " src={nft} alt="matic" />
 
-        <div className="absolute top-60 items-center mt-10">
+        <div className="flex flex-col justify-center items-center">
           <p className="text-lg font-semibold">NFT Name: #3042</p>
           <p className="text-lg font-semibold">NFT Collection: Bored Ape Yacht Club</p>
         </div>
-        <div className="absolute top-100 mb-10">
+        <Button className="" size="large">
+          Mint
+        </Button>
+        <div className="flex flex-row justify-center items-center gap-[1rem]">
           <Radio.Group value={targetSelectedValue} size="large" onChange={handleTargetRadioChange}>
             {targetChainOptions
               .filter((option) => option.value !== sourceSelectedValue)
@@ -218,7 +237,7 @@ const Dashboard = () => {
               ))}
           </Radio.Group>
         </div>
-        <div className="mt-20">
+        <div className="flex flex-row justify-center items-center gap-[1rem]">
           {targetChainOptions
             .filter((option) => option.value !== sourceSelectedValue)
             .map((option) => (
@@ -231,18 +250,15 @@ const Dashboard = () => {
                     </Space>
                   </Button>
                 </Dropdown>
-                <span className="mr-6">{0}</span>
+                <span className="">{0}</span>
               </Space>
             ))}
         </div>
-        <Button className="absolute top-80 mt-8" size="large">
-          Mint
-        </Button>
-        <div className="absolute top-80 mt-80">
-        <Button className="pr-[2px]" size="large">
+        <div className="flex flex-row justify-center items-center gap-[1rem]">
+        <Button className="" size="large">
           Submit 
         </Button>
-        <Button className="mr-10" size="large">
+        <Button className="" size="large">
           Cancel
         </Button>
         </div>
