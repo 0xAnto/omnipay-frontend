@@ -1,14 +1,15 @@
-import React, {useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import nft from '../image/nft.jpeg';
 import { Button, Dropdown, Form, Input, Menu, MenuProps, Radio, Space, message } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import { ADDRESS, BundlerEndpoints, ContractAddress } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
-import { ethers } from 'ethers';
+import { Contract, ethers } from 'ethers';
 import { getUiAmount } from 'utils/helpers';
 import { ERC20Helper } from 'utils/ERC20Helper';
 import TextArea from 'antd/es/input/TextArea';
 import Submit from './Submit';
+import { ERC721_ABI } from 'utils/NFT_ABI';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -25,6 +26,10 @@ const Dashboard = () => {
   const [scrollsepoliaUsdcValue, setScrollsepoliaUSDC] = useState<number>(0);
   const [basegoerliUsdcValue, setBasegoerliUSDC] = useState<number>(0);
   const [mumbaiUsdcValue, setMumbaiUSDC] = useState<number>(0);
+  const [formData, setFormData] = useState({
+    to: '',
+    data: '',
+  });
   useEffect(() => {
     const sdk = async () => {
       const [
@@ -80,7 +85,6 @@ const Dashboard = () => {
           }
         ),
       ]);
-      // const data =new ERC20Helper(arbitrumgoerliPrimeInstance as PrimeSdk)
       setArbitrumGoerliInstance(arbitrumgoerliPrimeInstance);
       setMantletestnetInstance(mantletestnetPrimeInstance);
       setScrollsepoliaInstance(scrollsepoliaPrimeInstance);
@@ -177,6 +181,81 @@ const Dashboard = () => {
   const handleClick = async (token: any) => {
     console.log('🚀 token:', token);
   };
+  const mintClick = async () => {
+    let data = await mintUserOps(sourceSelectedValue);
+    console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
+  };
+  const mintUserOps = async (sourceSelectedValue: number) => {
+    switch (sourceSelectedValue) {
+      case 1:
+        console.log('arbitrumGoerli');
+        let collection = new Contract(
+          ContractAddress[421613].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
+        );
+        const transactionData = collection.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        const data = await arbitrumGoerliInstance?.addUserOpsToBatch({
+          to: ContractAddress[421613].NFT,
+          data: transactionData,
+        });
+        return await arbitrumGoerliInstance?.estimate();
+      case 2:
+        console.log('mantletestnet');
+        let collection1 = new Contract(
+          ContractAddress[5001].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
+        );
+        const transactionData1 = collection1.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        const data1 = await mantletestnetInstance?.addUserOpsToBatch({
+          to: ContractAddress[5001].NFT,
+          data: transactionData1,
+        });
+        return await mantletestnetInstance?.estimate();
+      case 3:
+        console.log('scrollsepolia');
+        let collection2 = new Contract(
+          ContractAddress[534351].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
+        );
+        const transactionData2 = collection2.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        const data2 = await scrollsepoliaInstance?.addUserOpsToBatch({
+          to: ContractAddress[534351].NFT,
+          data: transactionData2,
+        });
+        return await scrollsepoliaInstance?.estimate();
+      case 4:
+        console.log('basegoerli');
+        let collection3 = new Contract(
+          ContractAddress[84531].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
+        );
+        const transactionData3 = collection3.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        const data3 = await basegoerliInstance?.addUserOpsToBatch({
+          to: ContractAddress[84531].NFT,
+          data: transactionData3,
+        });
+        return await basegoerliInstance?.estimate();
+      case 5:
+        console.log('mumbai');
+        let collection4 = new Contract(
+          ContractAddress[80001].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
+        );
+        const transactionData4 = collection4.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        const data4 = await mumbaiInstance?.addUserOpsToBatch({
+          to: ContractAddress[80001].NFT,
+          data: transactionData4,
+        });
+        return await mumbaiInstance?.estimate();
+      default:
+        break;
+    }
+  };
   const handleMenuClick: MenuProps['onClick'] = (e: any) => {
     message.info('Selected USDC.');
   };
@@ -239,6 +318,60 @@ const Dashboard = () => {
   const onFinish = (values: any) => {
     const privateKeyValue = values.PrivateKey;
     console.log('PrivateKey:', privateKeyValue);
+    const to = values.to;
+    console.log('to:', to);
+  };
+  const usdcUserOps = async (sourceSelectedValue: number, to: string, data: string) => {
+    switch (sourceSelectedValue) {
+      case 1:
+        console.log('arbitrumGoerli');
+        await arbitrumGoerliInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        return await arbitrumGoerliInstance?.estimate();
+      case 2:
+        console.log('mantletestnet');
+        await mantletestnetInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        return await mantletestnetInstance?.estimate();
+      case 3:
+        console.log('scrollsepolia');
+        await scrollsepoliaInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        return await scrollsepoliaInstance?.estimate();
+      case 4:
+        console.log('basegoerli');
+        await basegoerliInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        return await basegoerliInstance?.estimate();
+      case 5:
+        console.log('mumbai');
+        await mumbaiInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        return await mumbaiInstance?.estimate();
+      default:
+        break;
+    }
+  };
+  const handleExecute = async () => {
+    const { to, data } = formData;
+    let dataOps = await usdcUserOps(sourceSelectedValue, to, data);
+    console.log('🚀 ~ file: Dashboard.tsx:398 ~ handleExecute ~ dataOps:', dataOps);
+  };
+  const handleInputChange = (name: string, value: string) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
   return (
     <div className="bg-black  xxl:h-screen xl:h-screen  lg:-screen md:h-full sm:h-full max-sm:h-full  font-inter flex w-full flex-row justify-center items-center">
@@ -284,7 +417,12 @@ const Dashboard = () => {
               <p className="text-lg font-semibold">NFT Collection: Lucky Louie</p>
             </div>
             <div>
-              <Button className="" size="large">
+              <Button
+                onClick={() => {
+                  mintClick();
+                }}
+                size="large"
+              >
                 Mint
               </Button>
             </div>
@@ -292,13 +430,17 @@ const Dashboard = () => {
         ) : (
           <div className={`flex flex-col justify-center items-center `}>
             <Form.Item<FieldType> label="To" name="to" rules={[{ message: 'Enter target address' }]}>
-              <Input placeholder="Enter target address" />
+              <Input placeholder="Enter target address" onChange={(e) => handleInputChange('to', e.target.value)} />
             </Form.Item>
             <Form.Item<FieldType> label="Data" name="Data" rules={[{ message: 'Enter calldata' }]}>
-              <TextArea rows={4} placeholder="Enter call data" />
+              <TextArea
+                rows={4}
+                placeholder="Enter call data"
+                onChange={(e) => handleInputChange('data', e.target.value)}
+              />
             </Form.Item>
             <div>
-              <Button className="mt-5" size="large">
+              <Button className="mt-5" size="large" onClick={handleExecute}>
                 Execute
               </Button>
             </div>
