@@ -1,3 +1,4 @@
+import { UserOperationStruct } from '@etherspot/prime-sdk/dist/sdk/contracts/src/interfaces/IEtherspotPaymaster';
 import { StateSlice, Store } from 'store/types';
 export type AppSlice = {
   isSubmitOpen: boolean;
@@ -9,6 +10,8 @@ export type AppSlice = {
   basegoerliUsdcValue:number;
   mumbaiUsdcValue:number;
   fee:number;
+  userops:any;
+  useropscalldata:any;
   updateSubmitOpen(payload: boolean): void;
   updateSourceSelectedValue(payload: number): void;
   updateTargetSelectedValue(payload: number): void;
@@ -18,6 +21,8 @@ export type AppSlice = {
   updatedBasegoerliUSDC(payload: number): void;
   updatedMumbaiUSDC(payload: number): void;
   setFee(payload: number): void;
+  setuserops(payload: any): void;
+  setuseropscalldata(payload: any): void;
 };
 
 export const createAppSlice: StateSlice<Store, AppSlice> = (set:any) => ({
@@ -30,6 +35,8 @@ export const createAppSlice: StateSlice<Store, AppSlice> = (set:any) => ({
   basegoerliUsdcValue:0,
   mumbaiUsdcValue:0,
   fee:0,
+  userops:{},
+  useropscalldata:{},
   updateSubmitOpen(payload: AppSlice['isSubmitOpen']) {
     set({ isSubmitOpen: payload });
   },
@@ -56,5 +63,11 @@ export const createAppSlice: StateSlice<Store, AppSlice> = (set:any) => ({
   },
   setFee(payload: AppSlice['fee']) {
     set({ fee: payload });
+  },
+  setuserops(payload: AppSlice['userops']) {
+    set({ userops: payload });
+  },
+  setuseropscalldata(payload: AppSlice['useropscalldata']) {
+    set({ useropscalldata: payload });
   }
 });
