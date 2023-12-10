@@ -59,7 +59,8 @@ export class ERC20Helper {
 
   async transfer(recipient: string, amount: BigNumber): Promise<any> {
     const transactionData = this.token.interface.encodeFunctionData('transfer', [recipient, amount]);
-    await this.sdk.addUserOpsToBatch({ to: this.tokenAddress, data: transactionData });
+    let data = await this.sdk.addUserOpsToBatch({ to: this.tokenAddress, data: transactionData });
+    console.log("🚀 🚀 🚀 🚀 🚀 data:", data)
   }
 
   async transferFrom(sender: string, recipient: string, amount: BigNumber): Promise<any> {

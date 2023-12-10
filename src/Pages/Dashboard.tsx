@@ -12,7 +12,6 @@ import Submit from './Submit';
 import { ERC721_ABI } from 'utils/NFT_ABI';
 import Lottie from 'react-lottie-player';
 import loader from '../image/loader.json';
-import { ERC20_ABI } from 'utils/ERC20_ABI';
 import { useStore } from 'store';
 
 const Dashboard = () => {
@@ -41,6 +40,7 @@ const Dashboard = () => {
     updatedMumbaiUSDC,
     updatedScrollsepoliaUSDC,
     setFee,
+    setuserops,
   } = useStore();
   useEffect(() => {
     const sdk = async () => {
@@ -148,13 +148,13 @@ const Dashboard = () => {
     { label: 'Base Goerli', value: 4 },
     { label: 'Polygon Mumbai', value: 5 },
   ];
-  const targetChainOptions = [
-    { label: 'Arbitrum Goerli', value: 1 },
-    { label: 'Mantle Testnet', value: 2 },
-    { label: 'Scroll Testnet', value: 3 },
-    { label: 'Base Goerli', value: 4 },
-    { label: 'Polygon Mumbai', value: 5 },
-  ];
+  // const targetChainOptions = [
+  //   { label: 'Arbitrum Goerli', value: 1 },
+  //   { label: 'Mantle Testnet', value: 2 },
+  //   { label: 'Scroll Testnet', value: 3 },
+  //   { label: 'Base Goerli', value: 4 },
+  //   { label: 'Polygon Mumbai', value: 5 },
+  // ];
 
   const handleSourceRadioChange = async (e: any) => {
     try {
@@ -191,28 +191,28 @@ const Dashboard = () => {
     }
   };
 
-  const handleTargetRadioChange = (e: any) => {
-    updateTargetSelectedValue(e.target.value);
-  };
+  // const handleTargetRadioChange = (e: any) => {
+  //   updateTargetSelectedValue(e.target.value);
+  // };
   const handleMintChange = (e: any) => {
     setMintTypeValue(e.target.value);
   };
   const handleClick = async (token: any) => {
     console.log('🚀 token:', token);
   };
-  const mintClick = async () => {
-    try {
-      setIsLoader(true);
-      await sleep(5000);
-      // let data = await mintUserOps(sourceSelectedValue);
-      // console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
-    } catch (error: any) {
-      console.log('Error executing order:', error);
-    } finally {
-      setIsLoader(true);
-      updateSubmitOpen(true);
-    }
-  };
+  // const mintClick = async () => {
+  //   try {
+  //     setIsLoader(true);
+  //     await sleep(5000);
+  //     // let data = await mintUserOps(sourceSelectedValue);
+  //     // console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
+  //   } catch (error: any) {
+  //     console.log('Error executing order:', error);
+  //   } finally {
+  //     setIsLoader(true);
+  //     updateSubmitOpen(true);
+  //   }
+  // };
   const mintUserOps = async (sourceSelectedValue: number) => {
     try {
       setIsLoader(true);
@@ -231,9 +231,10 @@ const Dashboard = () => {
             to: ContractAddress[421613].NFT,
             data: transactionData,
           });
-          let op = await arbitrumGoerliInstance.estimate();
+          let useropsdata = await arbitrumGoerliInstance.estimate();
+          setuserops(useropsdata);
           const body = {
-            userOp: op,
+            userOp: useropsdata,
             chainId: 421613,
           };
           const response: any = await (
@@ -242,11 +243,9 @@ const Dashboard = () => {
               body: JSON.stringify(body),
             })
           ).json();
-          if (response.error!) {
+          if (response.error === false) {
             setFee(response.usdAmount);
           }
-  
-          console.log('🚀 ~ file: Dashboard.tsx:240 ~ mintUserOps ~ response:', response);
           break;
         case 2:
           if (!mantletestnetInstance) return;
@@ -263,14 +262,21 @@ const Dashboard = () => {
             data: transactionData1,
           });
           let opmantletestnet = await mantletestnetInstance.estimate();
-          let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
-          let userOpsReceiptmantletestnet = null;
-          const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
-          while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
-            await sleep(2);
-            userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+          setuserops(opmantletestnet);
+          const body1 = {
+            userOp: opmantletestnet,
+            chainId: 5001,
+          };
+          const response1: any = await (
+            await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+              method: 'POST',
+              body: JSON.stringify(body1),
+            })
+          ).json();
+          if (response1.error === false) {
+            setFee(response1.usdAmount);
           }
-          return userOpsReceiptmantletestnet;
+          break;
         case 3:
           if (!scrollsepoliaInstance) return;
           console.log('scrollsepolia');
@@ -285,15 +291,22 @@ const Dashboard = () => {
             to: ContractAddress[534351].NFT,
             data: transactionData2,
           });
-          let opscrollsepolia = await scrollsepoliaInstance.estimate();
-          let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
-          let userOpsReceiptscrollsepolia = null;
-          const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
-          while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
-            await sleep(2);
-            userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+          let useropsdata1 = await scrollsepoliaInstance.estimate();
+          setuserops(useropsdata1);
+          const body2 = {
+            userOp: useropsdata1,
+            chainId: 534351,
+          };
+          const response2: any = await (
+            await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+              method: 'POST',
+              body: JSON.stringify(body2),
+            })
+          ).json();
+          if (response2.error === false) {
+            setFee(response2.usdAmount);
           }
-          return userOpsReceiptscrollsepolia;
+          break;
         case 4:
           if (!basegoerliInstance) return;
           console.log('basegoerli');
@@ -309,14 +322,22 @@ const Dashboard = () => {
             data: transactionData3,
           });
           let opbasegoerli = await basegoerliInstance.estimate();
-          let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
-          let userOpsReceiptbasegoerli = null;
-          const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
-          while (userOpsReceiptbasegoerli == null && Date.now() < timeoutbasegoerli) {
-            await sleep(2);
-            userOpsReceiptbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+          setuserops(opbasegoerli);
+          const body3 = {
+            userOp: opbasegoerli,
+            chainId: 84531,
+          };
+          const response3: any = await (
+            await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+              method: 'POST',
+              body: JSON.stringify(body3),
+            })
+          ).json();
+          if (response3.error === false) {
+            setFee(response3.usdAmount);
           }
-          return userOpsReceiptbasegoerli;
+          break;
+
         case 5:
           if (!mumbaiInstance) return;
           console.log('mumbai');
@@ -332,14 +353,21 @@ const Dashboard = () => {
             data: transactionData4,
           });
           let opmumbai = await mumbaiInstance.estimate();
-          let hashmumbai = await mumbaiInstance.send(opmumbai);
-          let userOpsReceiptmumbai = null;
-          const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
-          while (userOpsReceiptmumbai == null && Date.now() < timeoutmumbai) {
-            await sleep(2);
-            userOpsReceiptmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+          setuserops(opmumbai);
+          const body4 = {
+            userOp: opmumbai,
+            chainId: 80001,
+          };
+          const response4: any = await (
+            await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+              method: 'POST',
+              body: JSON.stringify(body4),
+            })
+          ).json();
+          if (response4.error === false) {
+            setFee(response4.usdAmount);
           }
-          return userOpsReceiptmumbai;
+          break;
         default:
           break;
       }
@@ -349,7 +377,6 @@ const Dashboard = () => {
       setIsLoader(true);
       updateSubmitOpen(true);
     }
-
   };
   const handleMenuClick: MenuProps['onClick'] = (e: any) => {
     message.info('Selected USDC.');
@@ -427,14 +454,21 @@ const Dashboard = () => {
           data: data,
         });
         let op = await arbitrumGoerliInstance.estimate();
-        let hash = await arbitrumGoerliInstance.send(op);
-        let userOpsReceipt = null;
-        const timeout = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceipt == null && Date.now() < timeout) {
-          await sleep(2);
-          userOpsReceipt = await arbitrumGoerliInstance.getUserOpReceipt(hash);
+        setuserops(op);
+        const body = {
+          userOp: op,
+          chainId: 421613,
+        };
+        const response: any = await (
+          await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          })
+        ).json();
+        if (response.error === false) {
+          setFee(response.usdAmount);
         }
-        return userOpsReceipt;
+        break;
       case 2:
         console.log('mantletestnet');
         if (!mantletestnetInstance) return;
@@ -444,14 +478,21 @@ const Dashboard = () => {
           data: data,
         });
         let opmantletestnet = await mantletestnetInstance.estimate();
-        let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
-        let userOpsReceiptmantletestnet = null;
-        const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
-          await sleep(2);
-          userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+        setuserops(opmantletestnet);
+        const body1 = {
+          userOp: opmantletestnet,
+          chainId: 5001,
+        };
+        const response1: any = await (
+          await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body1),
+          })
+        ).json();
+        if (response1.error === false) {
+          setFee(response1.usdAmount);
         }
-        return userOpsReceiptmantletestnet;
+        break;
       case 3:
         console.log('scrollsepolia');
         if (!scrollsepoliaInstance) return;
@@ -461,14 +502,21 @@ const Dashboard = () => {
           data: data,
         });
         let opscrollsepolia = await scrollsepoliaInstance.estimate();
-        let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
-        let userOpsReceiptscrollsepolia = null;
-        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
-          await sleep(2);
-          userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+        setuserops(opscrollsepolia);
+        const body2 = {
+          userOp: opscrollsepolia,
+          chainId: 534351,
+        };
+        const response2: any = await (
+          await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body2),
+          })
+        ).json();
+        if (response2.error === false) {
+          setFee(response2.usdAmount);
         }
-        return userOpsReceiptscrollsepolia;
+        break;
       case 4:
         console.log('basegoerli');
         if (!basegoerliInstance) return;
@@ -478,14 +526,21 @@ const Dashboard = () => {
           data: data,
         });
         let opbasegoerli = await basegoerliInstance.estimate();
-        let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
-        let userOpsbasegoerli = null;
-        const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
-        while (userOpsbasegoerli == null && Date.now() < timeoutbasegoerli) {
-          await sleep(2);
-          userOpsbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+        setuserops(opbasegoerli);
+        const body3 = {
+          userOp: opbasegoerli,
+          chainId: 84531,
+        };
+        const response3: any = await (
+          await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body3),
+          })
+        ).json();
+        if (response3.error === false) {
+          setFee(response3.usdAmount);
         }
-        return userOpsbasegoerli;
+        break;
       case 5:
         console.log('mumbai');
         if (!mumbaiInstance) return;
@@ -495,14 +550,21 @@ const Dashboard = () => {
           data: data,
         });
         let opmumbai = await mumbaiInstance.estimate();
-        let hashmumbai = await mumbaiInstance.send(opmumbai);
-        let userOpsmumbai = null;
-        const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
-        while (userOpsmumbai == null && Date.now() < timeoutmumbai) {
-          await sleep(2);
-          userOpsmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+        setuserops(opmumbai);
+        const body4 = {
+          userOp: opmumbai,
+          chainId: 80001,
+        };
+        const response4: any = await (
+          await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body4),
+          })
+        ).json();
+        if (response4.error === false) {
+          setFee(response4.usdAmount);
         }
-        return userOpsmumbai;
+        break;
       default:
         break;
     }
@@ -511,16 +573,7 @@ const Dashboard = () => {
     try {
       const { to, data } = formData;
       let dataOps = await usdcUserOps(sourceSelectedValue, to, data);
-      // const body = {
-      //   userOp: op,
-      //   chainId: chain,
-      // };
-      // const response: any = await (
-      //   await fetch('http://localhost:3006/wallet/generatePaymasterAndData', {
-      //     method: 'POST',
-      //     body: JSON.stringify(body),
-      //   })
-      // ).json();
+      console.log('🚀 ~ file: Dashboard.tsx:576 ~ handleExecute ~ dataOps:', dataOps);
     } catch (error) {
     } finally {
       updateSubmitOpen(true);
@@ -539,17 +592,6 @@ const Dashboard = () => {
       <div className="xxl:w-[40%] xl:w-[60%] lg:w-[80%] md:w-[80%] sm:w-[100%] max-sm:w-[100%]   h-full bg-white flex flex-col justify-center items-center gap-[2rem]">
         <div>
           <p className="justify-center items-center font-extrabold">Omni Pay</p>
-        </div>
-        <div className="flex  flex-row justify-start items-start ">
-          <div className="flex  justify-center items-center mr-4 ">Private</div>
-          <Input.Password />
-          <Button
-            className="bg-blue-500 text-white flex  justify-center items-center ml-2"
-            type="primary"
-            htmlType="submit"
-          >
-            Submit
-          </Button>
         </div>
 
         <div className="">
@@ -592,7 +634,7 @@ const Dashboard = () => {
             </div>
             <div>
               <Button
-                className="mt-5"
+                className="mt-1"
                 onClick={() => {
                   mintUserOps(sourceSelectedValue);
                 }}
