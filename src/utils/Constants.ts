@@ -2,7 +2,7 @@ export const USDC = {
   logoURI: 'https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png',
 };
 export const ADDRESS = '0xbA9aA9DeE8CEeA4D6ac0b4a29B6528431B1D6678';
-
+export const FEEPAYER='0x80a1874E1046B1cc5deFdf4D3153838B72fF94Ac'
 // Bundler endpoints
 export const BundlerEndpoints = {
   421613: {

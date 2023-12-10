@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import nft from '../image/nft.jpeg';
 import { Button, Dropdown, Form, Input, Menu, MenuProps, Radio, Space, message } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
-import { ADDRESS, BundlerEndpoints, ContractAddress } from 'utils/Constants';
+import { ADDRESS, BundlerEndpoints, ContractAddress, USDC } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
 import { Contract, ethers } from 'ethers';
 import { getUiAmount, sleep } from 'utils/helpers';
@@ -12,6 +12,8 @@ import Submit from './Submit';
 import { ERC721_ABI } from 'utils/NFT_ABI';
 import Lottie from 'react-lottie-player';
 import loader from '../image/loader.json';
+import { ERC20_ABI } from 'utils/ERC20_ABI';
+import { useStore } from 'store';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -20,20 +22,25 @@ const Dashboard = () => {
   const [basegoerliInstance, setBasegoerliInstance] = useState<PrimeSdk>();
   const [mumbaiInstance, setMumbaiInstance] = useState<PrimeSdk>();
   const [nativeBalance, setNativebalance] = useState<number>();
-  const [sourceSelectedValue, setSourceSelectedValue] = useState(0);
-  const [targetSelectedValue, setTargetSelectedValue] = useState(0);
   const [mintTypeValue, setMintTypeValue] = useState(1);
-  const [arbitrumGoerliUsdcValue, setArbitrumGoerliUSDC] = useState<number>(0);
-  const [mantletestnetUsdcValue, setMantletestnetUSDC] = useState<number>(0);
-  const [scrollsepoliaUsdcValue, setScrollsepoliaUSDC] = useState<number>(0);
-  const [basegoerliUsdcValue, setBasegoerliUSDC] = useState<number>(0);
-  const [mumbaiUsdcValue, setMumbaiUSDC] = useState<number>(0);
   const [formData, setFormData] = useState({
     to: '',
     data: '',
   });
   const [isLoader, setIsLoader] = useState(false);
   const [isBalanceLoader, setIsBalanceLoader] = useState(false);
+  const {
+    isSubmitOpen,
+    sourceSelectedValue,
+    updateSubmitOpen,
+    updateSourceSelectedValue,
+    updateTargetSelectedValue,
+    updatedArbitrumGoerliUSDC,
+    updatedBasegoerliUSDC,
+    updatedMantletestnetUSDC,
+    updatedMumbaiUSDC,
+    updatedScrollsepoliaUSDC,
+  } = useStore();
   useEffect(() => {
     const sdk = async () => {
       const [
@@ -121,11 +128,11 @@ const Dashboard = () => {
           new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
         ),
       ]);
-      setArbitrumGoerliUSDC(getUiAmount(Number(await arbitrumgoerliusdc.balanceOf(ADDRESS)), 6));
-      setMantletestnetUSDC(getUiAmount(Number(await mantletestnetusdc.balanceOf(ADDRESS)), 6));
-      setScrollsepoliaUSDC(getUiAmount(Number(await scrollsepoliausdc.balanceOf(ADDRESS)), 6));
-      setBasegoerliUSDC(getUiAmount(Number(await baseGoerliusdc.balanceOf(ADDRESS)), 6));
-      setMumbaiUSDC(getUiAmount(Number(await mumbaiusdc.balanceOf(ADDRESS)), 6));
+      updatedArbitrumGoerliUSDC(getUiAmount(Number(await arbitrumgoerliusdc.balanceOf(ADDRESS)), 6));
+      updatedMantletestnetUSDC(getUiAmount(Number(await mantletestnetusdc.balanceOf(ADDRESS)), 6));
+      updatedScrollsepoliaUSDC(getUiAmount(Number(await scrollsepoliausdc.balanceOf(ADDRESS)), 6));
+      updatedBasegoerliUSDC(getUiAmount(Number(await baseGoerliusdc.balanceOf(ADDRESS)), 6));
+      updatedMumbaiUSDC(getUiAmount(Number(await mumbaiusdc.balanceOf(ADDRESS)), 6));
     };
     sdk();
   }, []);
@@ -151,7 +158,7 @@ const Dashboard = () => {
   const handleSourceRadioChange = async (e: any) => {
     try {
       setIsBalanceLoader(true);
-      setSourceSelectedValue(e.target.value);
+      updateSourceSelectedValue(e.target.value);
       let provider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(
         BundlerEndpoints[421613].bundler
       );
@@ -184,7 +191,7 @@ const Dashboard = () => {
   };
 
   const handleTargetRadioChange = (e: any) => {
-    setTargetSelectedValue(e.target.value);
+    updateTargetSelectedValue(e.target.value);
   };
   const handleMintChange = (e: any) => {
     setMintTypeValue(e.target.value);
@@ -195,12 +202,14 @@ const Dashboard = () => {
   const mintClick = async () => {
     try {
       setIsLoader(true);
-      let data = await mintUserOps(sourceSelectedValue);
-      console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
+      await sleep(5000)
+      // let data = await mintUserOps(sourceSelectedValue);
+      // console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
     } catch (error: any) {
       console.log('Error executing order:', error);
     } finally {
-      setIsLoader(false);
+      setIsLoader(true);
+      updateSubmitOpen(true);
     }
   };
   const mintUserOps = async (sourceSelectedValue: number) => {
@@ -220,14 +229,18 @@ const Dashboard = () => {
           data: transactionData,
         });
         let op = await arbitrumGoerliInstance.estimate();
-        let hash = await arbitrumGoerliInstance.send(op);
-        let userOpsReceipt = null;
-        const timeout = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceipt == null && Date.now() < timeout) {
-          await sleep(2);
-          userOpsReceipt = await arbitrumGoerliInstance.getUserOpReceipt(hash);
-        }
-        return userOpsReceipt;
+        const body = {
+          userOp: op,
+          chainId: 421613,
+        };
+        const response: any = await (
+          await fetch('http://localhost:3006/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          })
+        ).json();
+        console.log("🚀 ~ file: Dashboard.tsx:240 ~ mintUserOps ~ response:", response)
+        break;
       case 2:
         if (!mantletestnetInstance) return;
         console.log('mantletestnet');
@@ -481,10 +494,28 @@ const Dashboard = () => {
     }
   };
   const handleExecute = async () => {
-    const { to, data } = formData;
-    let dataOps = await usdcUserOps(sourceSelectedValue, to, data);
+    try {
+      const { to, data } = formData;
+      let dataOps = await usdcUserOps(sourceSelectedValue, to, data);
+      // const body = {
+      //   userOp: op,
+      //   chainId: chain,
+      // };
+      // const response: any = await (
+      //   await fetch('http://localhost:3006/wallet/generatePaymasterAndData', {
+      //     method: 'POST',
+      //     body: JSON.stringify(body),
+      //   })
+      // ).json();
+    } catch (error) {
+      
+    }finally{
+      updateSubmitOpen(true);
+    }
+ 
+  
 
-    console.log('🚀 USDC :', dataOps);
+    // console.log('🚀 USDC :', dataOps);
   };
   const handleInputChange = (name: string, value: string) => {
     setFormData((prevData) => ({
@@ -498,18 +529,20 @@ const Dashboard = () => {
         <div>
           <p className="justify-center items-center font-extrabold">Omni Pay</p>
         </div>
-        <Form name="basic" initialValues={{ remember: true }} onFinish={onFinish} autoComplete="off">
-          <Form.Item label="PrivateKey" name="PrivateKey">
-            <Input.Password />
-          </Form.Item>
-          <Button
-            className="bg-blue-500 text-white flex  justify-center items-center "
+        <div className="flex  flex-row justify-start items-start ">
+          <div className='flex  justify-center items-center mr-4 '>
+            Private
+          </div>
+        <Input.Password />
+            <Button
+            className="bg-blue-500 text-white flex  justify-center items-center ml-2"
             type="primary"
             htmlType="submit"
           >
             Submit
           </Button>
-        </Form>
+        </div>
+
         <div className="">
           <div className="flex flex-row justify-center items-center mb-1"></div>
           <Radio.Group value={sourceSelectedValue} size="large" onChange={handleSourceRadioChange}>
@@ -550,6 +583,7 @@ const Dashboard = () => {
             </div>
             <div>
               <Button
+                className="mt-5"
                 onClick={() => {
                   mintClick();
                 }}
@@ -590,94 +624,17 @@ const Dashboard = () => {
             </div>
           </div>
         )}
-        <div className="flex flex-row justify-center items-center gap-[1rem]">
-          <Radio.Group value={targetSelectedValue} size="large" onChange={handleTargetRadioChange}>
-            {targetChainOptions
-              .filter((option) => option.value !== sourceSelectedValue)
-              .map((option) => (
-                <Radio.Button key={option.value} value={option.value}>
-                  {option.label}
-                </Radio.Button>
-              ))}
-          </Radio.Group>
-        </div>
-        <div className="flex flex-row justify-center items-center gap-[1rem]">
-          {sourceSelectedValue !== 1 && (
-            <Space>
-              <Dropdown overlay={menu} placement="bottomLeft" arrow>
-                <Button>
-                  <Space>
-                    USDC
-                    <DownOutlined />
-                  </Space>
-                </Button>
-              </Dropdown>
-              <span>{arbitrumGoerliUsdcValue ? arbitrumGoerliUsdcValue : 0}</span>
-            </Space>
-          )}
-          {sourceSelectedValue !== 2 && (
-            <Space>
-              <Dropdown overlay={menu} placement="bottomLeft" arrow>
-                <Button>
-                  <Space>
-                    USDC
-                    <DownOutlined />
-                  </Space>
-                </Button>
-              </Dropdown>
-              <span>{mantletestnetUsdcValue ? mantletestnetUsdcValue : 0}</span>
-            </Space>
-          )}
-          {sourceSelectedValue !== 3 && (
-            <Space>
-              <Dropdown overlay={menu} placement="bottomLeft" arrow>
-                <Button>
-                  <Space>
-                    USDC
-                    <DownOutlined />
-                  </Space>
-                </Button>
-              </Dropdown>
-              <span>{scrollsepoliaUsdcValue ? scrollsepoliaUsdcValue : 0}</span>
-            </Space>
-          )}
-          {sourceSelectedValue !== 4 && (
-            <Space>
-              <Dropdown overlay={menu} placement="bottomLeft" arrow>
-                <Button>
-                  <Space>
-                    USDC
-                    <DownOutlined />
-                  </Space>
-                </Button>
-              </Dropdown>
-              <span>{basegoerliUsdcValue ? basegoerliUsdcValue : 0}</span>
-            </Space>
-          )}
-          {sourceSelectedValue !== 5 && (
-            <Space>
-              <Dropdown overlay={menu} placement="bottomLeft" arrow>
-                <Button>
-                  <Space>
-                    USDC
-                    <DownOutlined />
-                  </Space>
-                </Button>
-              </Dropdown>
-              <span>{mumbaiUsdcValue ? mumbaiUsdcValue : 0}</span>
-            </Space>
-          )}
-        </div>
-        <div className="flex flex-row justify-center items-center gap-[1rem]">
-          <Button className="" size="large">
-            Submit
-          </Button>
-          <Button className="" size="large">
-            Cancel
-          </Button>
-        </div>
       </div>
-      {false && <Submit />}
+
+      {isSubmitOpen && (
+        <Submit
+        arbitrumGoerliInstance={arbitrumGoerliInstance!}
+        basegoerliInstance={basegoerliInstance!}
+        mantletestnetInstance={mantletestnetInstance!}
+        mumbaiInstance={mumbaiInstance!}
+        scrollsepoliaInstance={scrollsepoliaInstance!}
+        />
+      )}
     </div>
   );
 };
