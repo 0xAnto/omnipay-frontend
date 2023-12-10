@@ -8,6 +8,7 @@ export type AppSlice = {
   scrollsepoliaUsdcValue:number;
   basegoerliUsdcValue:number;
   mumbaiUsdcValue:number;
+  fee:number;
   updateSubmitOpen(payload: boolean): void;
   updateSourceSelectedValue(payload: number): void;
   updateTargetSelectedValue(payload: number): void;
@@ -16,6 +17,7 @@ export type AppSlice = {
   updatedScrollsepoliaUSDC(payload: number): void;
   updatedBasegoerliUSDC(payload: number): void;
   updatedMumbaiUSDC(payload: number): void;
+  setFee(payload: number): void;
 };
 
 export const createAppSlice: StateSlice<Store, AppSlice> = (set:any) => ({
@@ -27,6 +29,7 @@ export const createAppSlice: StateSlice<Store, AppSlice> = (set:any) => ({
   scrollsepoliaUsdcValue:0,
   basegoerliUsdcValue:0,
   mumbaiUsdcValue:0,
+  fee:0,
   updateSubmitOpen(payload: AppSlice['isSubmitOpen']) {
     set({ isSubmitOpen: payload });
   },
@@ -50,5 +53,8 @@ export const createAppSlice: StateSlice<Store, AppSlice> = (set:any) => ({
   },
   updatedMumbaiUSDC(payload: AppSlice['mumbaiUsdcValue']) {
     set({ mumbaiUsdcValue: payload });
+  },
+  setFee(payload: AppSlice['fee']) {
+    set({ fee: payload });
   }
 });

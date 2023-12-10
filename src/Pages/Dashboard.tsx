@@ -40,6 +40,7 @@ const Dashboard = () => {
     updatedMantletestnetUSDC,
     updatedMumbaiUSDC,
     updatedScrollsepoliaUSDC,
+    setFee,
   } = useStore();
   useEffect(() => {
     const sdk = async () => {
@@ -202,7 +203,7 @@ const Dashboard = () => {
   const mintClick = async () => {
     try {
       setIsLoader(true);
-      await sleep(5000)
+      await sleep(5000);
       // let data = await mintUserOps(sourceSelectedValue);
       // console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
     } catch (error: any) {
@@ -213,129 +214,142 @@ const Dashboard = () => {
     }
   };
   const mintUserOps = async (sourceSelectedValue: number) => {
-    switch (sourceSelectedValue) {
-      case 1:
-        if (!arbitrumGoerliInstance) return;
-        console.log('arbitrumGoerli');
-        let collection = new Contract(
-          ContractAddress[421613].NFT,
-          ERC721_ABI,
-          new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
-        );
-        const transactionData = collection.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        await arbitrumGoerliInstance.clearUserOpsFromBatch();
-        await arbitrumGoerliInstance?.addUserOpsToBatch({
-          to: ContractAddress[421613].NFT,
-          data: transactionData,
-        });
-        let op = await arbitrumGoerliInstance.estimate();
-        const body = {
-          userOp: op,
-          chainId: 421613,
-        };
-        const response: any = await (
-          await fetch('http://localhost:3006/wallet/fetch_price', {
-            method: 'POST',
-            body: JSON.stringify(body),
-          })
-        ).json();
-        console.log("🚀 ~ file: Dashboard.tsx:240 ~ mintUserOps ~ response:", response)
-        break;
-      case 2:
-        if (!mantletestnetInstance) return;
-        console.log('mantletestnet');
-        let collection1 = new Contract(
-          ContractAddress[5001].NFT,
-          ERC721_ABI,
-          new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
-        );
-        const transactionData1 = collection1.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        await mantletestnetInstance.clearUserOpsFromBatch();
-        await mantletestnetInstance?.addUserOpsToBatch({
-          to: ContractAddress[5001].NFT,
-          data: transactionData1,
-        });
-        let opmantletestnet = await mantletestnetInstance.estimate();
-        let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
-        let userOpsReceiptmantletestnet = null;
-        const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
-          await sleep(2);
-          userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
-        }
-        return userOpsReceiptmantletestnet;
-      case 3:
-        if (!scrollsepoliaInstance) return;
-        console.log('scrollsepolia');
-        let collection2 = new Contract(
-          ContractAddress[534351].NFT,
-          ERC721_ABI,
-          new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
-        );
-        const transactionData2 = collection2.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        await scrollsepoliaInstance.clearUserOpsFromBatch();
-        await scrollsepoliaInstance?.addUserOpsToBatch({
-          to: ContractAddress[534351].NFT,
-          data: transactionData2,
-        });
-        let opscrollsepolia = await scrollsepoliaInstance.estimate();
-        let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
-        let userOpsReceiptscrollsepolia = null;
-        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
-          await sleep(2);
-          userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
-        }
-        return userOpsReceiptscrollsepolia;
-      case 4:
-        if (!basegoerliInstance) return;
-        console.log('basegoerli');
-        let collection3 = new Contract(
-          ContractAddress[84531].NFT,
-          ERC721_ABI,
-          new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
-        );
-        const transactionData3 = collection3.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        await basegoerliInstance.clearUserOpsFromBatch();
-        await basegoerliInstance?.addUserOpsToBatch({
-          to: ContractAddress[84531].NFT,
-          data: transactionData3,
-        });
-        let opbasegoerli = await basegoerliInstance.estimate();
-        let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
-        let userOpsReceiptbasegoerli = null;
-        const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceiptbasegoerli == null && Date.now() < timeoutbasegoerli) {
-          await sleep(2);
-          userOpsReceiptbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
-        }
-        return userOpsReceiptbasegoerli;
-      case 5:
-        if (!mumbaiInstance) return;
-        console.log('mumbai');
-        let collection4 = new Contract(
-          ContractAddress[80001].NFT,
-          ERC721_ABI,
-          new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
-        );
-        const transactionData4 = collection4.interface.encodeFunctionData('safeMint', [ADDRESS]);
-        await mumbaiInstance.clearUserOpsFromBatch();
-        await mumbaiInstance?.addUserOpsToBatch({
-          to: ContractAddress[80001].NFT,
-          data: transactionData4,
-        });
-        let opmumbai = await mumbaiInstance.estimate();
-        let hashmumbai = await mumbaiInstance.send(opmumbai);
-        let userOpsReceiptmumbai = null;
-        const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
-        while (userOpsReceiptmumbai == null && Date.now() < timeoutmumbai) {
-          await sleep(2);
-          userOpsReceiptmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
-        }
-        return userOpsReceiptmumbai;
-      default:
-        break;
+    try {
+      setIsLoader(true);
+      switch (sourceSelectedValue) {
+        case 1:
+          if (!arbitrumGoerliInstance) return;
+          console.log('arbitrumGoerli');
+          let collection = new Contract(
+            ContractAddress[421613].NFT,
+            ERC721_ABI,
+            new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
+          );
+          const transactionData = collection.interface.encodeFunctionData('safeMint', [ADDRESS]);
+          await arbitrumGoerliInstance.clearUserOpsFromBatch();
+          await arbitrumGoerliInstance?.addUserOpsToBatch({
+            to: ContractAddress[421613].NFT,
+            data: transactionData,
+          });
+          let op = await arbitrumGoerliInstance.estimate();
+          const body = {
+            userOp: op,
+            chainId: 421613,
+          };
+          const response: any = await (
+            await fetch('https://omnipay-etherspot.koyeb.app/wallet/fetch_price', {
+              method: 'POST',
+              body: JSON.stringify(body),
+            })
+          ).json();
+          if (response.error!) {
+            setFee(response.usdAmount);
+          }
+  
+          console.log('🚀 ~ file: Dashboard.tsx:240 ~ mintUserOps ~ response:', response);
+          break;
+        case 2:
+          if (!mantletestnetInstance) return;
+          console.log('mantletestnet');
+          let collection1 = new Contract(
+            ContractAddress[5001].NFT,
+            ERC721_ABI,
+            new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
+          );
+          const transactionData1 = collection1.interface.encodeFunctionData('safeMint', [ADDRESS]);
+          await mantletestnetInstance.clearUserOpsFromBatch();
+          await mantletestnetInstance?.addUserOpsToBatch({
+            to: ContractAddress[5001].NFT,
+            data: transactionData1,
+          });
+          let opmantletestnet = await mantletestnetInstance.estimate();
+          let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
+          let userOpsReceiptmantletestnet = null;
+          const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
+          while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
+            await sleep(2);
+            userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+          }
+          return userOpsReceiptmantletestnet;
+        case 3:
+          if (!scrollsepoliaInstance) return;
+          console.log('scrollsepolia');
+          let collection2 = new Contract(
+            ContractAddress[534351].NFT,
+            ERC721_ABI,
+            new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
+          );
+          const transactionData2 = collection2.interface.encodeFunctionData('safeMint', [ADDRESS]);
+          await scrollsepoliaInstance.clearUserOpsFromBatch();
+          await scrollsepoliaInstance?.addUserOpsToBatch({
+            to: ContractAddress[534351].NFT,
+            data: transactionData2,
+          });
+          let opscrollsepolia = await scrollsepoliaInstance.estimate();
+          let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
+          let userOpsReceiptscrollsepolia = null;
+          const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
+          while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
+            await sleep(2);
+            userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+          }
+          return userOpsReceiptscrollsepolia;
+        case 4:
+          if (!basegoerliInstance) return;
+          console.log('basegoerli');
+          let collection3 = new Contract(
+            ContractAddress[84531].NFT,
+            ERC721_ABI,
+            new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
+          );
+          const transactionData3 = collection3.interface.encodeFunctionData('safeMint', [ADDRESS]);
+          await basegoerliInstance.clearUserOpsFromBatch();
+          await basegoerliInstance?.addUserOpsToBatch({
+            to: ContractAddress[84531].NFT,
+            data: transactionData3,
+          });
+          let opbasegoerli = await basegoerliInstance.estimate();
+          let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
+          let userOpsReceiptbasegoerli = null;
+          const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
+          while (userOpsReceiptbasegoerli == null && Date.now() < timeoutbasegoerli) {
+            await sleep(2);
+            userOpsReceiptbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+          }
+          return userOpsReceiptbasegoerli;
+        case 5:
+          if (!mumbaiInstance) return;
+          console.log('mumbai');
+          let collection4 = new Contract(
+            ContractAddress[80001].NFT,
+            ERC721_ABI,
+            new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
+          );
+          const transactionData4 = collection4.interface.encodeFunctionData('safeMint', [ADDRESS]);
+          await mumbaiInstance.clearUserOpsFromBatch();
+          await mumbaiInstance?.addUserOpsToBatch({
+            to: ContractAddress[80001].NFT,
+            data: transactionData4,
+          });
+          let opmumbai = await mumbaiInstance.estimate();
+          let hashmumbai = await mumbaiInstance.send(opmumbai);
+          let userOpsReceiptmumbai = null;
+          const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
+          while (userOpsReceiptmumbai == null && Date.now() < timeoutmumbai) {
+            await sleep(2);
+            userOpsReceiptmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+          }
+          return userOpsReceiptmumbai;
+        default:
+          break;
+      }
+    } catch (error: any) {
+      console.log('Error executing order:', error);
+    } finally {
+      setIsLoader(true);
+      updateSubmitOpen(true);
     }
+
   };
   const handleMenuClick: MenuProps['onClick'] = (e: any) => {
     message.info('Selected USDC.');
@@ -508,12 +522,9 @@ const Dashboard = () => {
       //   })
       // ).json();
     } catch (error) {
-      
-    }finally{
+    } finally {
       updateSubmitOpen(true);
     }
- 
-  
 
     // console.log('🚀 USDC :', dataOps);
   };
@@ -530,11 +541,9 @@ const Dashboard = () => {
           <p className="justify-center items-center font-extrabold">Omni Pay</p>
         </div>
         <div className="flex  flex-row justify-start items-start ">
-          <div className='flex  justify-center items-center mr-4 '>
-            Private
-          </div>
-        <Input.Password />
-            <Button
+          <div className="flex  justify-center items-center mr-4 ">Private</div>
+          <Input.Password />
+          <Button
             className="bg-blue-500 text-white flex  justify-center items-center ml-2"
             type="primary"
             htmlType="submit"
@@ -585,7 +594,7 @@ const Dashboard = () => {
               <Button
                 className="mt-5"
                 onClick={() => {
-                  mintClick();
+                  mintUserOps(sourceSelectedValue);
                 }}
                 size="large"
               >
@@ -628,11 +637,11 @@ const Dashboard = () => {
 
       {isSubmitOpen && (
         <Submit
-        arbitrumGoerliInstance={arbitrumGoerliInstance!}
-        basegoerliInstance={basegoerliInstance!}
-        mantletestnetInstance={mantletestnetInstance!}
-        mumbaiInstance={mumbaiInstance!}
-        scrollsepoliaInstance={scrollsepoliaInstance!}
+          arbitrumGoerliInstance={arbitrumGoerliInstance!}
+          basegoerliInstance={basegoerliInstance!}
+          mantletestnetInstance={mantletestnetInstance!}
+          mumbaiInstance={mumbaiInstance!}
+          scrollsepoliaInstance={scrollsepoliaInstance!}
         />
       )}
     </div>
