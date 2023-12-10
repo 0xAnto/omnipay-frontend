@@ -1,8 +1,8 @@
 export const USDC = {
   logoURI: 'https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png',
 };
-export const ADDRESS = '0x7305B1a9bDD8247DeB288BC2d271626159cB8c4c';
-
+export const ADDRESS = '0xbA9aA9DeE8CEeA4D6ac0b4a29B6528431B1D6678';
+export const FEEPAYER='0x80a1874E1046B1cc5deFdf4D3153838B72fF94Ac'
 // Bundler endpoints
 export const BundlerEndpoints = {
   421613: {
@@ -44,7 +44,7 @@ export const BundlerEndpoints = {
   },
   84531: {
     chainId: 84531,
-    bundler: 'https://basegoerli-bundler.etherspot.io/84531',
+    bundler: 'https://basegoerli-bundler.etherspot.io',
     contracts: {
       entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
       walletFactory: {
@@ -65,5 +65,33 @@ export const BundlerEndpoints = {
         simpleAccount: '0x9406Cc6185a346906296840746125a0E44976454',
       },
     },
+  },
+};
+
+export const ContractAddress = {
+  421613: {
+    chainId: 421613,
+    USDC: '0xB786f06D3274805bf892dad11f49fEfAa45A5dAE',
+    NFT: '0x640551913901CdbD7769b6f72943186f356069FB'
+  },
+  5001: {
+    chainId: 5001,
+    USDC: '0xB786f06D3274805bf892dad11f49fEfAa45A5dAE',
+    NFT: '0x640551913901CdbD7769b6f72943186f356069FB'
+  },
+  534351: {
+    chainId: 534351,
+    USDC: '0x640551913901CdbD7769b6f72943186f356069FB',
+    NFT: '0xB786f06D3274805bf892dad11f49fEfAa45A5dAE'
+  },
+  84531: {
+    chainId: 84531,
+    USDC: '0xB786f06D3274805bf892dad11f49fEfAa45A5dAE',
+    NFT: '0x640551913901CdbD7769b6f72943186f356069FB'
+  },
+  80001: {
+    chainId: 80001,
+    USDC: '0xB786f06D3274805bf892dad11f49fEfAa45A5dAE',
+    NFT: '0x640551913901CdbD7769b6f72943186f356069FB'
   },
 };

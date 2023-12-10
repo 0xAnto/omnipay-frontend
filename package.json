@@ -18,7 +18,8 @@
     "react-tabs": "^6.0.2",
     "tw-elements-react": "^1.0.0-alpha1",
     "web-vitals": "^2.1.4",
-    "web3": "^1.10.0"
+    "web3": "^1.10.0",
+    "zustand": "^4.4.1"
   },
   "scripts": {
     "start": "react-app-rewired start",

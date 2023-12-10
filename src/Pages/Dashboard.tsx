@@ -1,12 +1,19 @@
-import React, { SetStateAction, useEffect, useState } from 'react';
-import nft from '../image/BoredApe.png';
-import { Button, Dropdown, Flex, Input, Menu, MenuProps, Radio, RadioChangeEvent, Space, message } from 'antd';
-import { DownOutlined, UserOutlined } from '@ant-design/icons';
-import { ADDRESS, BundlerEndpoints, USDC } from 'utils/Constants';
+import React, { useEffect, useState } from 'react';
+import nft from '../image/nft.jpeg';
+import { Button, Dropdown, Form, Input, Menu, MenuProps, Radio, Space, message } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
+import { ADDRESS, BundlerEndpoints, ContractAddress, USDC } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
-import { ethers } from 'ethers';
-import { getUiAmount } from 'utils/helpers';
+import { Contract, ethers } from 'ethers';
+import { getUiAmount, sleep } from 'utils/helpers';
 import { ERC20Helper } from 'utils/ERC20Helper';
+import TextArea from 'antd/es/input/TextArea';
+import Submit from './Submit';
+import { ERC721_ABI } from 'utils/NFT_ABI';
+import Lottie from 'react-lottie-player';
+import loader from '../image/loader.json';
+import { ERC20_ABI } from 'utils/ERC20_ABI';
+import { useStore } from 'store';
 
 const Dashboard = () => {
   const [arbitrumGoerliInstance, setArbitrumGoerliInstance] = useState<PrimeSdk>();
@@ -15,19 +22,40 @@ const Dashboard = () => {
   const [basegoerliInstance, setBasegoerliInstance] = useState<PrimeSdk>();
   const [mumbaiInstance, setMumbaiInstance] = useState<PrimeSdk>();
   const [nativeBalance, setNativebalance] = useState<number>();
-  const [sourceSelectedValue, setSourceSelectedValue] = useState(0);
-  const [targetSelectedValue, setTargetSelectedValue] = useState(0);
+  const [mintTypeValue, setMintTypeValue] = useState(1);
+  const [formData, setFormData] = useState({
+    to: '',
+    data: '',
+  });
+  const [isLoader, setIsLoader] = useState(false);
+  const [isBalanceLoader, setIsBalanceLoader] = useState(false);
+  const {
+    isSubmitOpen,
+    sourceSelectedValue,
+    updateSubmitOpen,
+    updateSourceSelectedValue,
+    updateTargetSelectedValue,
+    updatedArbitrumGoerliUSDC,
+    updatedBasegoerliUSDC,
+    updatedMantletestnetUSDC,
+    updatedMumbaiUSDC,
+    updatedScrollsepoliaUSDC,
+  } = useStore();
   useEffect(() => {
     const sdk = async () => {
-      const [arbitrumgoerliPrimeInstance, mantletestnetPrimeInstance, scrollsepoliaPrimeInstance, baseGoerliPrimeInstance, mumbaiPrimeInstance] = await Promise.all([
-
+      const [
+        arbitrumgoerliPrimeInstance,
+        mantletestnetPrimeInstance,
+        scrollsepoliaPrimeInstance,
+        baseGoerliPrimeInstance,
+        mumbaiPrimeInstance,
+      ] = await Promise.all([
         new PrimeSdk(
           {
             privateKey: process.env.REACT_APP_WALLET_PRIVATE_KEY as string,
           },
           {
             chainId: Number(BundlerEndpoints[421613].chainId),
-            bundlerRpcUrl: BundlerEndpoints[421613].bundler as string,
             projectKey: '',
           }
         ),
@@ -37,7 +65,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[5001].chainId),
-            bundlerRpcUrl: BundlerEndpoints[5001].bundler as string,
             projectKey: '',
           }
         ),
@@ -47,7 +74,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[534351].chainId),
-            bundlerRpcUrl: BundlerEndpoints[534351].bundler as string,
             projectKey: '',
           }
         ),
@@ -57,7 +83,6 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[84531].chainId),
-            bundlerRpcUrl: BundlerEndpoints[84531].bundler as string,
             projectKey: '',
           }
         ),
@@ -67,21 +92,54 @@ const Dashboard = () => {
           },
           {
             chainId: Number(BundlerEndpoints[80001].chainId),
-            bundlerRpcUrl: BundlerEndpoints[80001].bundler as string,
             projectKey: '',
           }
         ),
       ]);
-      // const data =new ERC20Helper(arbitrumgoerliPrimeInstance as PrimeSdk)
       setArbitrumGoerliInstance(arbitrumgoerliPrimeInstance);
       setMantletestnetInstance(mantletestnetPrimeInstance);
-      setScrollsepoliaInstance(scrollsepoliaPrimeInstance)
-      setBasegoerliInstance(baseGoerliPrimeInstance)
-      setMumbaiInstance(mumbaiPrimeInstance)
+      setScrollsepoliaInstance(scrollsepoliaPrimeInstance);
+      setBasegoerliInstance(baseGoerliPrimeInstance);
+      setMumbaiInstance(mumbaiPrimeInstance);
+      const [arbitrumgoerliusdc, mantletestnetusdc, scrollsepoliausdc, baseGoerliusdc, mumbaiusdc] = await Promise.all([
+        new ERC20Helper(
+          arbitrumGoerliInstance as PrimeSdk,
+          ContractAddress[421613].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
+        ),
+        new ERC20Helper(
+          mantletestnetInstance as PrimeSdk,
+          ContractAddress[5001].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
+        ),
+        new ERC20Helper(
+          scrollsepoliaInstance as PrimeSdk,
+          ContractAddress[534351].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
+        ),
+        new ERC20Helper(
+          basegoerliInstance as PrimeSdk,
+          ContractAddress[84531].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
+        ),
+        new ERC20Helper(
+          mumbaiInstance as PrimeSdk,
+          ContractAddress[80001].USDC,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
+        ),
+      ]);
+      updatedArbitrumGoerliUSDC(getUiAmount(Number(await arbitrumgoerliusdc.balanceOf(ADDRESS)), 6));
+      updatedMantletestnetUSDC(getUiAmount(Number(await mantletestnetusdc.balanceOf(ADDRESS)), 6));
+      updatedScrollsepoliaUSDC(getUiAmount(Number(await scrollsepoliausdc.balanceOf(ADDRESS)), 6));
+      updatedBasegoerliUSDC(getUiAmount(Number(await baseGoerliusdc.balanceOf(ADDRESS)), 6));
+      updatedMumbaiUSDC(getUiAmount(Number(await mumbaiusdc.balanceOf(ADDRESS)), 6));
     };
     sdk();
   }, []);
-
+  const mintType = [
+    { label: 'Call Data', value: 1 },
+    { label: 'NFT', value: 2 },
+  ];
   const sourceChainOptions = [
     { label: 'Arbitrum Goerli', value: 1 },
     { label: 'Mantle Testnet', value: 2 },
@@ -98,44 +156,189 @@ const Dashboard = () => {
   ];
 
   const handleSourceRadioChange = async (e: any) => {
-    setSourceSelectedValue(e.target.value);
-    let provider:ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
-    switch (Number(e.target.value)) {
-      case 1:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
-        break;
-      case 2:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler);
-        break;
-      case 3:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler);
-        break;
-      case 4:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler);
-        break;
-      case 5:
-        provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler);
-        break;
-      default:
-        break;
+    try {
+      setIsBalanceLoader(true);
+      updateSourceSelectedValue(e.target.value);
+      let provider: ethers.providers.JsonRpcProvider = new ethers.providers.JsonRpcProvider(
+        BundlerEndpoints[421613].bundler
+      );
+      switch (Number(e.target.value)) {
+        case 1:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler);
+          break;
+        case 2:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler);
+          break;
+        case 3:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler);
+          break;
+        case 4:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler);
+          break;
+        case 5:
+          provider = new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler);
+          break;
+        default:
+          break;
+      }
+      const balance = await provider.getBalance(ADDRESS, 'latest');
+      setNativebalance(getUiAmount(Number(balance), 18));
+    } catch (error: any) {
+      console.log('Error executing order:', error);
+    } finally {
+      setIsBalanceLoader(false);
     }
-    const balance = await provider.getBalance(
-      ADDRESS,
-      "latest"
-    );
-    setNativebalance(getUiAmount(Number(balance)))
   };
 
   const handleTargetRadioChange = (e: any) => {
-    setTargetSelectedValue(e.target.value);
+    updateTargetSelectedValue(e.target.value);
   };
-  const items = [{ key: '1', label: 'USDC', logo: USDC.logoURI }];
+  const handleMintChange = (e: any) => {
+    setMintTypeValue(e.target.value);
+  };
   const handleClick = async (token: any) => {
     console.log('🚀 token:', token);
   };
+  const mintClick = async () => {
+    try {
+      setIsLoader(true);
+      await sleep(5000)
+      // let data = await mintUserOps(sourceSelectedValue);
+      // console.log('🚀 ~ file: Dashboard.tsx:183 ~ mintClick ~ data:', data);
+    } catch (error: any) {
+      console.log('Error executing order:', error);
+    } finally {
+      setIsLoader(true);
+      updateSubmitOpen(true);
+    }
+  };
+  const mintUserOps = async (sourceSelectedValue: number) => {
+    switch (sourceSelectedValue) {
+      case 1:
+        if (!arbitrumGoerliInstance) return;
+        console.log('arbitrumGoerli');
+        let collection = new Contract(
+          ContractAddress[421613].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[421613].bundler)
+        );
+        const transactionData = collection.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        await arbitrumGoerliInstance.clearUserOpsFromBatch();
+        await arbitrumGoerliInstance?.addUserOpsToBatch({
+          to: ContractAddress[421613].NFT,
+          data: transactionData,
+        });
+        let op = await arbitrumGoerliInstance.estimate();
+        const body = {
+          userOp: op,
+          chainId: 421613,
+        };
+        const response: any = await (
+          await fetch('http://localhost:3006/wallet/fetch_price', {
+            method: 'POST',
+            body: JSON.stringify(body),
+          })
+        ).json();
+        console.log("🚀 ~ file: Dashboard.tsx:240 ~ mintUserOps ~ response:", response)
+        break;
+      case 2:
+        if (!mantletestnetInstance) return;
+        console.log('mantletestnet');
+        let collection1 = new Contract(
+          ContractAddress[5001].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[5001].bundler)
+        );
+        const transactionData1 = collection1.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        await mantletestnetInstance.clearUserOpsFromBatch();
+        await mantletestnetInstance?.addUserOpsToBatch({
+          to: ContractAddress[5001].NFT,
+          data: transactionData1,
+        });
+        let opmantletestnet = await mantletestnetInstance.estimate();
+        let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
+        let userOpsReceiptmantletestnet = null;
+        const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
+          await sleep(2);
+          userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+        }
+        return userOpsReceiptmantletestnet;
+      case 3:
+        if (!scrollsepoliaInstance) return;
+        console.log('scrollsepolia');
+        let collection2 = new Contract(
+          ContractAddress[534351].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
+        );
+        const transactionData2 = collection2.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        await scrollsepoliaInstance.clearUserOpsFromBatch();
+        await scrollsepoliaInstance?.addUserOpsToBatch({
+          to: ContractAddress[534351].NFT,
+          data: transactionData2,
+        });
+        let opscrollsepolia = await scrollsepoliaInstance.estimate();
+        let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
+        let userOpsReceiptscrollsepolia = null;
+        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
+          await sleep(2);
+          userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+        }
+        return userOpsReceiptscrollsepolia;
+      case 4:
+        if (!basegoerliInstance) return;
+        console.log('basegoerli');
+        let collection3 = new Contract(
+          ContractAddress[84531].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[84531].bundler)
+        );
+        const transactionData3 = collection3.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        await basegoerliInstance.clearUserOpsFromBatch();
+        await basegoerliInstance?.addUserOpsToBatch({
+          to: ContractAddress[84531].NFT,
+          data: transactionData3,
+        });
+        let opbasegoerli = await basegoerliInstance.estimate();
+        let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
+        let userOpsReceiptbasegoerli = null;
+        const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptbasegoerli == null && Date.now() < timeoutbasegoerli) {
+          await sleep(2);
+          userOpsReceiptbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+        }
+        return userOpsReceiptbasegoerli;
+      case 5:
+        if (!mumbaiInstance) return;
+        console.log('mumbai');
+        let collection4 = new Contract(
+          ContractAddress[80001].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[80001].bundler)
+        );
+        const transactionData4 = collection4.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        await mumbaiInstance.clearUserOpsFromBatch();
+        await mumbaiInstance?.addUserOpsToBatch({
+          to: ContractAddress[80001].NFT,
+          data: transactionData4,
+        });
+        let opmumbai = await mumbaiInstance.estimate();
+        let hashmumbai = await mumbaiInstance.send(opmumbai);
+        let userOpsReceiptmumbai = null;
+        const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptmumbai == null && Date.now() < timeoutmumbai) {
+          await sleep(2);
+          userOpsReceiptmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+        }
+        return userOpsReceiptmumbai;
+      default:
+        break;
+    }
+  };
   const handleMenuClick: MenuProps['onClick'] = (e: any) => {
-    message.info('Click on menu item.');
-    console.log('click', e);
+    message.info('Selected USDC.');
   };
   const itemsdrop: MenuProps['items'] = [
     {
@@ -188,10 +391,160 @@ const Dashboard = () => {
       </Button>
     </Dropdown>
   );
+  type FieldType = {
+    PrivateKey?: string;
+    to?: string;
+    Data?: string;
+  };
+  const onFinish = (values: any) => {
+    const privateKeyValue = values.PrivateKey;
+    console.log('PrivateKey:', privateKeyValue);
+    const to = values.to;
+    console.log('to:', to);
+  };
+  const usdcUserOps = async (sourceSelectedValue: number, to: string, data: string) => {
+    switch (sourceSelectedValue) {
+      case 1:
+        console.log('arbitrumGoerli');
+        if (!arbitrumGoerliInstance) return;
+        await arbitrumGoerliInstance.clearUserOpsFromBatch();
+        await arbitrumGoerliInstance.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        let op = await arbitrumGoerliInstance.estimate();
+        let hash = await arbitrumGoerliInstance.send(op);
+        let userOpsReceipt = null;
+        const timeout = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceipt == null && Date.now() < timeout) {
+          await sleep(2);
+          userOpsReceipt = await arbitrumGoerliInstance.getUserOpReceipt(hash);
+        }
+        return userOpsReceipt;
+      case 2:
+        console.log('mantletestnet');
+        if (!mantletestnetInstance) return;
+        await mantletestnetInstance.clearUserOpsFromBatch();
+        await mantletestnetInstance.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        let opmantletestnet = await mantletestnetInstance.estimate();
+        let hashmantletestnet = await mantletestnetInstance.send(opmantletestnet);
+        let userOpsReceiptmantletestnet = null;
+        const timeoutmantletestnet = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptmantletestnet == null && Date.now() < timeoutmantletestnet) {
+          await sleep(2);
+          userOpsReceiptmantletestnet = await mantletestnetInstance.getUserOpReceipt(hashmantletestnet);
+        }
+        return userOpsReceiptmantletestnet;
+      case 3:
+        console.log('scrollsepolia');
+        if (!scrollsepoliaInstance) return;
+        await scrollsepoliaInstance.clearUserOpsFromBatch();
+        await scrollsepoliaInstance.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        let opscrollsepolia = await scrollsepoliaInstance.estimate();
+        let hashscrollsepolia = await scrollsepoliaInstance.send(opscrollsepolia);
+        let userOpsReceiptscrollsepolia = null;
+        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
+          await sleep(2);
+          userOpsReceiptscrollsepolia = await scrollsepoliaInstance.getUserOpReceipt(hashscrollsepolia);
+        }
+        return userOpsReceiptscrollsepolia;
+      case 4:
+        console.log('basegoerli');
+        if (!basegoerliInstance) return;
+        await basegoerliInstance.clearUserOpsFromBatch();
+        await basegoerliInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        let opbasegoerli = await basegoerliInstance.estimate();
+        let hashbasegoerli = await basegoerliInstance.send(opbasegoerli);
+        let userOpsbasegoerli = null;
+        const timeoutbasegoerli = Date.now() + 60000; // 1 minute timeout
+        while (userOpsbasegoerli == null && Date.now() < timeoutbasegoerli) {
+          await sleep(2);
+          userOpsbasegoerli = await basegoerliInstance.getUserOpReceipt(hashbasegoerli);
+        }
+        return userOpsbasegoerli;
+      case 5:
+        console.log('mumbai');
+        if (!mumbaiInstance) return;
+        await mumbaiInstance.clearUserOpsFromBatch();
+        await mumbaiInstance?.addUserOpsToBatch({
+          to: to,
+          data: data,
+        });
+        let opmumbai = await mumbaiInstance.estimate();
+        let hashmumbai = await mumbaiInstance.send(opmumbai);
+        let userOpsmumbai = null;
+        const timeoutmumbai = Date.now() + 60000; // 1 minute timeout
+        while (userOpsmumbai == null && Date.now() < timeoutmumbai) {
+          await sleep(2);
+          userOpsmumbai = await mumbaiInstance.getUserOpReceipt(hashmumbai);
+        }
+        return userOpsmumbai;
+      default:
+        break;
+    }
+  };
+  const handleExecute = async () => {
+    try {
+      const { to, data } = formData;
+      let dataOps = await usdcUserOps(sourceSelectedValue, to, data);
+      // const body = {
+      //   userOp: op,
+      //   chainId: chain,
+      // };
+      // const response: any = await (
+      //   await fetch('http://localhost:3006/wallet/generatePaymasterAndData', {
+      //     method: 'POST',
+      //     body: JSON.stringify(body),
+      //   })
+      // ).json();
+    } catch (error) {
+      
+    }finally{
+      updateSubmitOpen(true);
+    }
+ 
+  
+
+    // console.log('🚀 USDC :', dataOps);
+  };
+  const handleInputChange = (name: string, value: string) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
   return (
-    <div className="bg-black h-screen font-inter flex w-full flex-row justify-center items-center">
-      <div className="w-[40%] h-full bg-white flex flex-row justify-center items-center">
-        <div className="absolute top-5 mb-10">
+    <div className="bg-black  xxl:h-screen xl:h-screen  lg:-screen md:h-full sm:h-full max-sm:h-full  font-inter flex w-full flex-row justify-center items-center">
+      <div className="xxl:w-[40%] xl:w-[60%] lg:w-[80%] md:w-[80%] sm:w-[100%] max-sm:w-[100%]   h-full bg-white flex flex-col justify-center items-center gap-[2rem]">
+        <div>
+          <p className="justify-center items-center font-extrabold">Omni Pay</p>
+        </div>
+        <div className="flex  flex-row justify-start items-start ">
+          <div className='flex  justify-center items-center mr-4 '>
+            Private
+          </div>
+        <Input.Password />
+            <Button
+            className="bg-blue-500 text-white flex  justify-center items-center ml-2"
+            type="primary"
+            htmlType="submit"
+          >
+            Submit
+          </Button>
+        </div>
+
+        <div className="">
+          <div className="flex flex-row justify-center items-center mb-1"></div>
           <Radio.Group value={sourceSelectedValue} size="large" onChange={handleSourceRadioChange}>
             {sourceChainOptions.map((option) => (
               <Radio.Button key={option.value} value={option.value}>
@@ -200,53 +553,88 @@ const Dashboard = () => {
             ))}
           </Radio.Group>
         </div>
-        <div className="absolute top-14 mt-4">{`Balance : ${nativeBalance?nativeBalance:'0.0'}`}</div>
-        <img className="w-40 h-40 absolute top-20 left-1/2 transform -translate-x-1/2 mt-8" src={nft} alt="matic" />
-
-        <div className="absolute top-60 items-center mt-10">
-          <p className="text-lg font-semibold">NFT Name: #3042</p>
-          <p className="text-lg font-semibold">NFT Collection: Bored Ape Yacht Club</p>
-        </div>
-        <div className="absolute top-100 mb-10">
-          <Radio.Group value={targetSelectedValue} size="large" onChange={handleTargetRadioChange}>
-            {targetChainOptions
-              .filter((option) => option.value !== sourceSelectedValue)
-              .map((option) => (
-                <Radio.Button key={option.value} value={option.value}>
-                  {option.label}
-                </Radio.Button>
-              ))}
-          </Radio.Group>
-        </div>
-        <div className="mt-20">
-          {targetChainOptions
-            .filter((option) => option.value !== sourceSelectedValue)
-            .map((option) => (
-              <Space>
-                <Dropdown key={option.value} overlay={menu} placement="bottomLeft" arrow>
-                  <Button className="bg-blue-500 text-white">
-                    <Space>
-                      USDC
-                      <DownOutlined />
-                    </Space>
-                  </Button>
-                </Dropdown>
-                <span className="mr-6">{0}</span>
-              </Space>
-            ))}
-        </div>
-        <Button className="absolute top-80 mt-8" size="large">
-          Mint
-        </Button>
-        <div className="absolute top-80 mt-80">
-        <Button className="pr-[2px]" size="large">
-          Submit 
-        </Button>
-        <Button className="mr-10" size="large">
-          Cancel
-        </Button>
-        </div>
+        {isBalanceLoader ? (
+          <div className=" flex justify-center items-center">
+            <span>{'Loading '}</span>
+            <Lottie
+              loop
+              animationData={loader}
+              play
+              className="w-[2.2rem] h-[1.2rem] flex justify-center items-center"
+            />
+          </div>
+        ) : (
+          <div className="">{`Balance : ${nativeBalance ? nativeBalance : '0.0'}`}</div>
+        )}
+        {/* <div className="">{`Balance : ${nativeBalance ? nativeBalance : '0.0'}`}</div> */}
+        <Radio.Group value={mintTypeValue} size="large" onChange={handleMintChange}>
+          {mintType.map((option) => (
+            <Radio.Button key={option.value} value={option.value}>
+              {option.label}
+            </Radio.Button>
+          ))}
+        </Radio.Group>
+        {mintTypeValue && mintTypeValue == 2 ? (
+          <div className="flex flex-col justify-center items-center">
+            <img className="w-40 h-40 " src={nft} alt="matic" />
+            <div className="flex flex-col justify-center items-center">
+              <p className="text-lg font-semibold">NFT Name: #3042</p>
+              <p className="text-lg font-semibold">NFT Collection: Lucky Louie</p>
+            </div>
+            <div>
+              <Button
+                className="mt-5"
+                onClick={() => {
+                  mintClick();
+                }}
+                size="large"
+              >
+                {isLoader ? (
+                  <div className=" flex justify-center items-center">
+                    <span>{'Estimating '}</span>
+                    <Lottie
+                      loop
+                      animationData={loader}
+                      play
+                      className="w-[2.2rem] h-[1.2rem] flex justify-center items-center"
+                    />
+                  </div>
+                ) : (
+                  <span>{'Mint'}</span>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className={`flex flex-col justify-center items-center `}>
+            <Form.Item<FieldType> label="To" name="to" rules={[{ message: 'Enter target address' }]}>
+              <Input placeholder="Enter target address" onChange={(e) => handleInputChange('to', e.target.value)} />
+            </Form.Item>
+            <Form.Item<FieldType> label="Data" name="Data" rules={[{ message: 'Enter calldata' }]}>
+              <TextArea
+                rows={4}
+                placeholder="Enter call data"
+                onChange={(e) => handleInputChange('data', e.target.value)}
+              />
+            </Form.Item>
+            <div>
+              <Button className="mt-5" size="large" onClick={handleExecute}>
+                Execute
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {isSubmitOpen && (
+        <Submit
+        arbitrumGoerliInstance={arbitrumGoerliInstance!}
+        basegoerliInstance={basegoerliInstance!}
+        mantletestnetInstance={mantletestnetInstance!}
+        mumbaiInstance={mumbaiInstance!}
+        scrollsepoliaInstance={scrollsepoliaInstance!}
+        />
+      )}
     </div>
   );
 };
