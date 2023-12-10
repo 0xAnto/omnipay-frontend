@@ -4,10 +4,11 @@ import { useStore } from 'store';
 import { Button, Dropdown, Menu, MenuProps, Radio, Space, message } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import { ERC20Helper } from 'utils/ERC20Helper';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber, Contract, ethers } from 'ethers';
 import { ADDRESS, BundlerEndpoints, ContractAddress, FEEPAYER } from 'utils/Constants';
 import { PrimeSdk } from '@etherspot/prime-sdk';
 import { sleep } from 'utils/helpers';
+import { ERC721_ABI } from 'utils/NFT_ABI';
 interface SubmitHandleInterface {
   arbitrumGoerliInstance: PrimeSdk;
   mantletestnetInstance: PrimeSdk;
@@ -17,7 +18,9 @@ interface SubmitHandleInterface {
 }
 const Submit = (props: SubmitHandleInterface) => {
   const [isLoader, setIsLoader] = useState(false);
+  const [isTargetLoader, setIsTargetLoader] = useState(false);
   const [ishash, sethash] = useState<string>('');
+  const [isTargethash, setTargethash] = useState<string>('');
   const targetChainOptions = [
     { label: 'Arbitrum Goerli', value: 1 },
     { label: 'Mantle Testnet', value: 2 },
@@ -34,7 +37,7 @@ const Submit = (props: SubmitHandleInterface) => {
     scrollsepoliaUsdcValue,
     basegoerliUsdcValue,
     mumbaiUsdcValue,
-
+    fee,
     updateSubmitOpen,
     updateSourceSelectedValue,
     updateTargetSelectedValue,
@@ -140,6 +143,29 @@ const Submit = (props: SubmitHandleInterface) => {
       }
       if (userOpsReceiptmantletestnet.success) {
         sethash(userOpsReceiptmantletestnet.receipt.transactionHash);
+        await sleep(2000)
+        setIsTargetLoader(true)
+        let collection = new Contract(
+          ContractAddress[534351].NFT,
+          ERC721_ABI,
+          new ethers.providers.JsonRpcProvider(BundlerEndpoints[534351].bundler)
+        );
+        const transactionData = collection.interface.encodeFunctionData('safeMint', [ADDRESS]);
+        await props.scrollsepoliaInstance.clearUserOpsFromBatch();
+        await props.scrollsepoliaInstance?.addUserOpsToBatch({
+          to: ContractAddress[534351].NFT,
+          data: transactionData,
+        });
+        let op = await props.scrollsepoliaInstance.estimate();
+        let userops = await props.scrollsepoliaInstance.send(op);
+        let userOpsReceiptscrollsepolia = null;
+        const timeoutscrollsepolia = Date.now() + 60000; // 1 minute timeout
+        while (userOpsReceiptscrollsepolia == null && Date.now() < timeoutscrollsepolia) {
+          await sleep(2);
+          userOpsReceiptscrollsepolia = await props.scrollsepoliaInstance.getUserOpReceipt(userops);
+        }
+        setTargethash(userOpsReceiptscrollsepolia)
+        console.log("🚀 ~ file: Submit.tsx:158 ~ handleClick ~ userops:", userOpsReceiptscrollsepolia)
       }
     } catch (error: any) {
       console.log('Error handleClick order:', error);
@@ -256,7 +282,7 @@ const Submit = (props: SubmitHandleInterface) => {
           <div>
             {isLoader ? (
               <div className={`flex flex-col justify-center items-center gap-[1rem] mt-6`}>
-                Paying gas fee 0.1 USDC ...
+                {`Paying gas fee ${fee?fee:0}  USDC ...`}
               </div>
             ) : (
               <></>
